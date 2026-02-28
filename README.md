@@ -1,7 +1,7 @@
 # familiar-ai — .NET Server
 
 ASP.NET Core 9 WebSocket server for the familiar-ai embodied agent.
-A port of the Python `aio_server.py` / `EmbodiedAgent` stack.
+A port of the Python `FamiliarServer` / `EmbodiedAgent` stack.
 
 ## What it does
 
