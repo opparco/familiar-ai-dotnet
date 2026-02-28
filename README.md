@@ -19,7 +19,7 @@ A port of the Python `aio_server.py` / `EmbodiedAgent` stack.
 | Dependency | Purpose | Notes |
 |---|---|---|
 | [.NET 9 SDK](https://dotnet.microsoft.com/download) | Runtime | |
-| [ruri-v3 ONNX model](https://huggingface.co/cl-nagoya/ruri-v3) | Vector memory | `model.onnx` + `tokenizer.model` |
+| [ruri-v3 ONNX model](https://huggingface.co/keisuke-miyako/ruri-v3-30m-onnx-fp32) | Vector memory | `model.onnx` + `tokenizer.model` |
 | [VOICEVOX Engine](https://voicevox.hiroshiba.jp/) | TTS (default) | Local HTTP API on port 50021 |
 | [ffmpeg](https://ffmpeg.org/) | RTSP frame capture + audio playback | Must be in `PATH` |
 | mpv *(optional)* | Audio playback | Falls back to `ffplay` if absent |
@@ -123,7 +123,15 @@ This file is injected at the top of every system prompt and defines personality,
 
 ## ruri-v3 model setup
 
-Download from [cl-nagoya/ruri-v3](https://huggingface.co/cl-nagoya/ruri-v3) (ONNX export):
+Download from [keisuke-miyako/ruri-v3-30m-onnx-fp32](https://huggingface.co/keisuke-miyako/ruri-v3-30m-onnx-fp32):
+
+```bash
+# Using huggingface-cli (pip install huggingface_hub)
+huggingface-cli download keisuke-miyako/ruri-v3-30m-onnx-fp32 \
+  --local-dir ~/.familiar_ai/models/ruri-v3
+```
+
+Or manually place the files:
 
 ```
 ~/.familiar_ai/models/ruri-v3/
