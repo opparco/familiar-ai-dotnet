@@ -17,6 +17,11 @@ var cameraUser     = Environment.GetEnvironmentVariable("CAMERA_USERNAME") ?? "a
 var cameraPass     = Environment.GetEnvironmentVariable("CAMERA_PASSWORD") ?? "";
 var cameraPort     = int.TryParse(Environment.GetEnvironmentVariable("CAMERA_PORT"), out var cp) ? cp : 2020;
 
+var tuyaRegion     = Environment.GetEnvironmentVariable("TUYA_REGION")         ?? "eu";
+var tuyaApiKey     = Environment.GetEnvironmentVariable("TUYA_API_KEY")        ?? "";
+var tuyaApiSecret  = Environment.GetEnvironmentVariable("TUYA_API_SECRET")     ?? "";
+var tuyaDeviceId   = Environment.GetEnvironmentVariable("TUYA_DEVICE_ID")      ?? "";
+
 var ttsEngine      = Environment.GetEnvironmentVariable("TTS_ENGINE")          ?? "voicevox";
 var voicevoxUrl    = Environment.GetEnvironmentVariable("VOICEVOX_URL")         ?? "http://localhost:50021";
 var voicevoxSpk    = int.TryParse(Environment.GetEnvironmentVariable("VOICEVOX_SPEAKER"), out var vs) ? vs : 3;
@@ -83,7 +88,18 @@ builder.Services.AddSingleton<IFamiliarAgent>(sp =>
     sp.GetRequiredService<ILogger<TtsTool>>()
       .LogInformation("TTS engine: {Engine}", tts.EngineName);
 
-    return new EmbodiedAgent(config, backend, memory, sp.GetRequiredService<ILogger<EmbodiedAgent>>(), camera, tts);
+    // Mobility (optional — only constructed when TUYA_API_KEY is set)
+    MobilityTool? mobility = null;
+    if (!string.IsNullOrEmpty(tuyaApiKey) && !string.IsNullOrEmpty(tuyaDeviceId))
+    {
+        mobility = new MobilityTool(
+            tuyaRegion, tuyaApiKey, tuyaApiSecret, tuyaDeviceId,
+            sp.GetRequiredService<ILogger<MobilityTool>>());
+        sp.GetRequiredService<ILogger<MobilityTool>>()
+          .LogInformation("Mobility configured: device={DeviceId} region={Region}", tuyaDeviceId, tuyaRegion);
+    }
+
+    return new EmbodiedAgent(config, backend, memory, sp.GetRequiredService<ILogger<EmbodiedAgent>>(), camera, tts, mobility);
 });
 
 builder.Services.AddSingleton<ChatLogger>();
@@ -114,6 +130,7 @@ Console.WriteLine($"  WebSocket : ws://{host}:{port}/ws");
 Console.WriteLine($"  Platform  : {platform}{(string.IsNullOrEmpty(apiKey) ? " (no API key → stub)" : "")}");
 Console.WriteLine($"  Camera    : {(string.IsNullOrEmpty(cameraHost) ? "not configured" : $"{cameraHost}:{cameraPort} (ONVIF)")}");
 Console.WriteLine($"  TTS       : {ttsEngine.ToLower()}{(ttsEngine.ToLower() == "voicevox" ? $" (speaker {voicevoxSpk}, {voicevoxUrl})" : "")}");
+Console.WriteLine($"  Mobility  : {(string.IsNullOrEmpty(tuyaApiKey) ? "not configured" : $"Tuya {tuyaRegion.ToUpper()} device={tuyaDeviceId[..Math.Min(8, tuyaDeviceId.Length)]}…")}");
 var chatLogPath = Path.Combine(
     Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
     ".familiar_ai", "chat.log");

@@ -94,6 +94,15 @@ Camera uses RTSP `rtsp://{user}:{pass}@{host}:554/stream1` for frame capture.
 | `ELEVENLABS_API_KEY` | *(unset)* | ElevenLabs API key |
 | `ELEVENLABS_VOICE_ID` | *(unset)* | ElevenLabs voice ID |
 
+### Mobility (optional)
+
+| Variable | Default | Description |
+|---|---|---|
+| `TUYA_API_KEY` | *(unset)* | Tuya Cloud API key. Leave unset to disable. |
+| `TUYA_API_SECRET` | *(unset)* | Tuya Cloud API secret |
+| `TUYA_DEVICE_ID` | *(unset)* | Robot vacuum device ID |
+| `TUYA_REGION` | `eu` | API region: `eu` `us` `cn` `in` |
+
 ### Persona
 
 Create `ME.md` in the working directory or `~/.familiar_ai/ME.md`.
@@ -169,6 +178,7 @@ Connect to `ws://{host}:{port}/ws`.
 | `see` | With camera | Capture current RTSP frame → base64 JPEG |
 | `look` | With camera | ONVIF PTZ pan/tilt (left/right/up/down, 1–90°) |
 | `say` | With TTS | Speak text via VOICEVOX or ElevenLabs |
+| `walk` | With mobility | Tuya robot vacuum: forward/backward/left/right/stop with optional duration |
 
 ---
 
@@ -187,7 +197,8 @@ Program.cs
                         ├── MemoryTool         (remember / recall)
                         ├── TomTool            (Theory of Mind)
                         ├── CameraTool         (ONVIF + RTSP, optional)
-                        └── TtsTool            (VOICEVOX / ElevenLabs, optional)
+                        ├── TtsTool            (VOICEVOX / ElevenLabs, optional)
+                        └── MobilityTool       (Tuya Cloud API, optional)
                      DesireSystem              (autonomous motivations)
                      ChatLogger                (stdout + chat.log)
 ```
@@ -246,4 +257,4 @@ Key differences:
 - LLM backend: **Kimi only** (Python supports Anthropic / Gemini / OpenAI / Kimi)
 - No TUI or REPL — WebSocket server only
 - Embedding model: **ruri-v3 ONNX** (Python uses `multilingual-e5-small` via torch)
-- No robot mobility (`walk`) tool yet
+- Mobility backend: **Tuya Cloud API** (Python uses `tinytuya` library directly)
