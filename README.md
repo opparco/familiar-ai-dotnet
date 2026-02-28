@@ -127,8 +127,7 @@ Download from [keisuke-miyako/ruri-v3-30m-onnx-fp32](https://huggingface.co/keis
 
 ```bash
 # Using huggingface-cli (pip install huggingface_hub)
-huggingface-cli download keisuke-miyako/ruri-v3-30m-onnx-fp32 \
-  --local-dir ~/.familiar_ai/models/ruri-v3
+hf download keisuke-miyako/ruri-v3-30m-onnx-fp32 --local-dir ~/.familiar_ai/models/ruri-v3
 ```
 
 Or manually place the files:
