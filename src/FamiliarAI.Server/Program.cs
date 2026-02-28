@@ -1,6 +1,7 @@
 using FamiliarAI.Server;
 using FamiliarAI.Server.Agent;
 using FamiliarAI.Server.Agent.Backend;
+using FamiliarAI.Server.Agent.Tools;
 
 // ---- configuration ----
 var agentName     = Environment.GetEnvironmentVariable("AGENT_NAME")     ?? "Familiar";
@@ -16,28 +17,43 @@ var config = new AgentConfig(agentName, companionName, apiKey, platform, model);
 // ---- build ----
 var builder = WebApplication.CreateBuilder(args);
 
-// Suppress default ASP.NET banner; we'll print our own
 builder.Logging.SetMinimumLevel(LogLevel.Warning);
 builder.Logging.AddConsole();
 
-builder.WebHost.ConfigureKestrel(opts =>
-{
-    opts.ListenAnyIP(port);
-});
+builder.WebHost.ConfigureKestrel(opts => opts.ListenAnyIP(port));
 
-// Agent: KimiAgent is default; fall back to StubAgent if no API key
+// ---- services ----
 builder.Services.AddSingleton<IFamiliarAgent>(sp =>
 {
-    if (!string.IsNullOrEmpty(apiKey) && platform == "kimi")
+    if (string.IsNullOrEmpty(apiKey))
     {
-        return new KimiAgent(
-            config,
-            sp.GetRequiredService<ILogger<KimiAgent>>(),
-            sp.GetRequiredService<ILogger<KimiBackend>>());
+        sp.GetRequiredService<ILogger<StubAgent>>()
+          .LogWarning("API_KEY not set — using StubAgent (no real LLM calls)");
+        return new StubAgent(config);
     }
-    sp.GetRequiredService<ILogger<StubAgent>>()
-      .LogWarning("API_KEY not set — using StubAgent (no real LLM calls)");
-    return new StubAgent(config);
+
+    var kimiModel = string.IsNullOrEmpty(model) ? "kimi-k2.5" : model;
+    var backend   = new KimiBackend(apiKey, kimiModel, sp.GetRequiredService<ILogger<KimiBackend>>());
+
+    // ruri-v3 embedding: lazy attempt, fall back to StubAgent if model files missing
+    RuriEmbedding? embedder = null;
+    try
+    {
+        var modelDir = RuriEmbedding.ResolveModelDir();
+        embedder = new RuriEmbedding(modelDir);
+        sp.GetRequiredService<ILogger<RuriEmbedding>>()
+          .LogInformation("ruri-v3 loaded from {Dir}", modelDir);
+    }
+    catch (Exception ex)
+    {
+        sp.GetRequiredService<ILogger<RuriEmbedding>>()
+          .LogWarning("ruri-v3 not available ({Ex}) — memory tool disabled, using StubAgent", ex.Message);
+        return new StubAgent(config);
+    }
+
+    var memory = new ObservationMemory(embedder, sp.GetRequiredService<ILogger<ObservationMemory>>());
+
+    return new EmbodiedAgent(config, backend, memory, sp.GetRequiredService<ILogger<EmbodiedAgent>>());
 });
 
 builder.Services.AddSingleton<FamiliarServer>();
@@ -45,12 +61,8 @@ builder.Services.AddHostedService<AgentLoopService>();
 
 var app = builder.Build();
 
-app.UseWebSockets(new WebSocketOptions
-{
-    KeepAliveInterval = TimeSpan.FromSeconds(30),
-});
+app.UseWebSockets(new WebSocketOptions { KeepAliveInterval = TimeSpan.FromSeconds(30) });
 
-// WebSocket endpoint — the only route (CLI mode: no static files, no HTML serving)
 app.MapGet("/ws", async (HttpContext ctx, FamiliarServer server) =>
 {
     if (!ctx.WebSockets.IsWebSocketRequest)

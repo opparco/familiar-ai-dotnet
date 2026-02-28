@@ -56,6 +56,7 @@ public sealed class KimiBackend : IDisposable
     public async Task<(TurnResult Result, JsonObject RawAssistant)> StreamTurnAsync(
         string system,
         IReadOnlyList<JsonObject> history,
+        IReadOnlyList<ToolDefinition>? tools,
         int maxTokens,
         Action<string>? onText,
         CancellationToken ct = default)
@@ -73,6 +74,14 @@ public sealed class KimiBackend : IDisposable
             ["messages"]   = messages,
             ["stream"]     = true,
         };
+
+        if (tools is { Count: > 0 })
+        {
+            var toolsArr = new JsonArray();
+            foreach (var t in tools)
+                toolsArr.Add(t.ToKimiFormat());
+            body["tools"] = toolsArr;
+        }
 
         _logger.LogDebug("Kimi request: {Messages}", body.ToJsonString());
 
