@@ -21,6 +21,7 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
     private readonly KimiBackend _backend;
     private readonly ObservationMemory _memory;
     private readonly MemoryTool _memoryTool;
+    private readonly CameraTool? _camera;
     private readonly ILogger<EmbodiedAgent> _logger;
 
     // Prompt templates (loaded once at startup)
@@ -45,13 +46,15 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
         AgentConfig config,
         KimiBackend backend,
         ObservationMemory memory,
-        ILogger<EmbodiedAgent> logger)
+        ILogger<EmbodiedAgent> logger,
+        CameraTool? camera = null)
     {
         AgentName    = config.AgentName;
         CompanionName = config.CompanionName;
         _backend     = backend;
         _memory      = memory;
         _logger      = logger;
+        _camera      = camera;
         _memoryTool  = new MemoryTool(memory);
 
         var promptDir = ResolvePromptDir();
@@ -119,6 +122,7 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
 
         // ── Build tool list ───────────────────────────────────────────
         var tools = _memoryTool.GetToolDefinitions().ToList();
+        if (_camera is not null) tools.AddRange(_camera.GetToolDefinitions());
 
         // ── ReAct loop ────────────────────────────────────────────────
         bool cameraUsed   = false;
@@ -256,6 +260,9 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
     {
         if (name is "remember" or "recall")
             return _memoryTool.CallAsync(name, input);
+
+        if (name is "see" or "look" && _camera is not null)
+            return _camera.CallAsync(name, input, ct);
 
         return Task.FromResult<(string, string?)>(
             ($"Tool '{name}' not available in this configuration.", null));
@@ -421,7 +428,9 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
     private async Task<string> GeneratePlanAsync(string userInput, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(userInput)) return "";
-        var toolNames = string.Join(", ", _memoryTool.GetToolDefinitions().Select(t => t.Name));
+        var allDefs   = _memoryTool.GetToolDefinitions()
+            .Concat(_camera?.GetToolDefinitions() ?? []);
+        var toolNames = string.Join(", ", allDefs.Select(t => t.Name));
         var prompt = _tapePlanTemplate
             .Replace("{tools}",   toolNames)
             .Replace("{request}", userInput[..Math.Min(300, userInput.Length)]);
@@ -507,7 +516,11 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
             "prompts/ directory not found. Expected alongside the executable.");
     }
 
-    public void Dispose() => _memory.Dispose();
+    public void Dispose()
+    {
+        _memory.Dispose();
+        _camera?.Dispose();
+    }
 }
 
 // ── Extension helpers ─────────────────────────────────────────────────────────

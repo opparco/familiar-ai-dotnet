@@ -12,6 +12,11 @@ var model         = Environment.GetEnvironmentVariable("MODEL")          ?? "";
 var host          = Environment.GetEnvironmentVariable("WEB_HOST")       ?? "0.0.0.0";
 var port          = int.TryParse(Environment.GetEnvironmentVariable("WEB_PORT"), out var p) ? p : 5000;
 
+var cameraHost     = Environment.GetEnvironmentVariable("CAMERA_HOST")     ?? "";
+var cameraUser     = Environment.GetEnvironmentVariable("CAMERA_USERNAME") ?? "admin";
+var cameraPass     = Environment.GetEnvironmentVariable("CAMERA_PASSWORD") ?? "";
+var cameraPort     = int.TryParse(Environment.GetEnvironmentVariable("CAMERA_PORT"), out var cp) ? cp : 2020;
+
 var config = new AgentConfig(agentName, companionName, apiKey, platform, model);
 
 // ---- build ----
@@ -53,7 +58,18 @@ builder.Services.AddSingleton<IFamiliarAgent>(sp =>
 
     var memory = new ObservationMemory(embedder, sp.GetRequiredService<ILogger<ObservationMemory>>());
 
-    return new EmbodiedAgent(config, backend, memory, sp.GetRequiredService<ILogger<EmbodiedAgent>>());
+    // Camera (optional — only constructed when CAMERA_HOST is set)
+    CameraTool? camera = null;
+    if (!string.IsNullOrEmpty(cameraHost))
+    {
+        camera = new CameraTool(
+            cameraHost, cameraUser, cameraPass, cameraPort,
+            sp.GetRequiredService<ILogger<CameraTool>>());
+        sp.GetRequiredService<ILogger<CameraTool>>()
+          .LogInformation("Camera configured: {Host}:{Port}", cameraHost, cameraPort);
+    }
+
+    return new EmbodiedAgent(config, backend, memory, sp.GetRequiredService<ILogger<EmbodiedAgent>>(), camera);
 });
 
 builder.Services.AddSingleton<FamiliarServer>();
@@ -80,6 +96,7 @@ Console.WriteLine();
 Console.WriteLine($"  familiar-ai  [{agentName}]");
 Console.WriteLine($"  WebSocket : ws://{host}:{port}/ws");
 Console.WriteLine($"  Platform  : {platform}{(string.IsNullOrEmpty(apiKey) ? " (no API key → stub)" : "")}");
+Console.WriteLine($"  Camera    : {(string.IsNullOrEmpty(cameraHost) ? "not configured" : $"{cameraHost}:{cameraPort} (ONVIF)")}");
 Console.WriteLine("  Press Ctrl+C to stop");
 Console.WriteLine();
 
