@@ -17,6 +17,12 @@ var cameraUser     = Environment.GetEnvironmentVariable("CAMERA_USERNAME") ?? "a
 var cameraPass     = Environment.GetEnvironmentVariable("CAMERA_PASSWORD") ?? "";
 var cameraPort     = int.TryParse(Environment.GetEnvironmentVariable("CAMERA_PORT"), out var cp) ? cp : 2020;
 
+var ttsEngine      = Environment.GetEnvironmentVariable("TTS_ENGINE")          ?? "voicevox";
+var voicevoxUrl    = Environment.GetEnvironmentVariable("VOICEVOX_URL")         ?? "http://localhost:50021";
+var voicevoxSpk    = int.TryParse(Environment.GetEnvironmentVariable("VOICEVOX_SPEAKER"), out var vs) ? vs : 3;
+var elevenApiKey   = Environment.GetEnvironmentVariable("ELEVENLABS_API_KEY")   ?? "";
+var elevenVoiceId  = Environment.GetEnvironmentVariable("ELEVENLABS_VOICE_ID")  ?? "";
+
 var config = new AgentConfig(agentName, companionName, apiKey, platform, model);
 
 // ---- build ----
@@ -69,7 +75,15 @@ builder.Services.AddSingleton<IFamiliarAgent>(sp =>
           .LogInformation("Camera configured: {Host}:{Port}", cameraHost, cameraPort);
     }
 
-    return new EmbodiedAgent(config, backend, memory, sp.GetRequiredService<ILogger<EmbodiedAgent>>(), camera);
+    // TTS
+    ITtsEngine ttsEngineImpl = ttsEngine.ToLower() == "elevenlabs" && !string.IsNullOrEmpty(elevenApiKey)
+        ? new ElevenLabsEngine(elevenApiKey, elevenVoiceId)
+        : new VoicevoxEngine(voicevoxUrl, voicevoxSpk);
+    var tts = new TtsTool(ttsEngineImpl, sp.GetRequiredService<ILogger<TtsTool>>());
+    sp.GetRequiredService<ILogger<TtsTool>>()
+      .LogInformation("TTS engine: {Engine}", tts.EngineName);
+
+    return new EmbodiedAgent(config, backend, memory, sp.GetRequiredService<ILogger<EmbodiedAgent>>(), camera, tts);
 });
 
 builder.Services.AddSingleton<FamiliarServer>();
@@ -97,6 +111,7 @@ Console.WriteLine($"  familiar-ai  [{agentName}]");
 Console.WriteLine($"  WebSocket : ws://{host}:{port}/ws");
 Console.WriteLine($"  Platform  : {platform}{(string.IsNullOrEmpty(apiKey) ? " (no API key → stub)" : "")}");
 Console.WriteLine($"  Camera    : {(string.IsNullOrEmpty(cameraHost) ? "not configured" : $"{cameraHost}:{cameraPort} (ONVIF)")}");
+Console.WriteLine($"  TTS       : {ttsEngine.ToLower()}{(ttsEngine.ToLower() == "voicevox" ? $" (speaker {voicevoxSpk}, {voicevoxUrl})" : "")}");
 Console.WriteLine("  Press Ctrl+C to stop");
 Console.WriteLine();
 

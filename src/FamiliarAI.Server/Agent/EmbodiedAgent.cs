@@ -22,6 +22,7 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
     private readonly ObservationMemory _memory;
     private readonly MemoryTool _memoryTool;
     private readonly CameraTool? _camera;
+    private readonly TtsTool? _tts;
     private readonly ILogger<EmbodiedAgent> _logger;
 
     // Prompt templates (loaded once at startup)
@@ -47,7 +48,8 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
         KimiBackend backend,
         ObservationMemory memory,
         ILogger<EmbodiedAgent> logger,
-        CameraTool? camera = null)
+        CameraTool? camera = null,
+        TtsTool? tts = null)
     {
         AgentName    = config.AgentName;
         CompanionName = config.CompanionName;
@@ -55,6 +57,7 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
         _memory      = memory;
         _logger      = logger;
         _camera      = camera;
+        _tts         = tts;
         _memoryTool  = new MemoryTool(memory);
 
         var promptDir = ResolvePromptDir();
@@ -123,6 +126,7 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
         // ── Build tool list ───────────────────────────────────────────
         var tools = _memoryTool.GetToolDefinitions().ToList();
         if (_camera is not null) tools.AddRange(_camera.GetToolDefinitions());
+        if (_tts    is not null) tools.AddRange(_tts.GetToolDefinitions());
 
         // ── ReAct loop ────────────────────────────────────────────────
         bool cameraUsed   = false;
@@ -263,6 +267,9 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
 
         if (name is "see" or "look" && _camera is not null)
             return _camera.CallAsync(name, input, ct);
+
+        if (name == "say" && _tts is not null)
+            return _tts.CallAsync(name, input, ct);
 
         return Task.FromResult<(string, string?)>(
             ($"Tool '{name}' not available in this configuration.", null));
@@ -429,7 +436,8 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
     {
         if (string.IsNullOrWhiteSpace(userInput)) return "";
         var allDefs   = _memoryTool.GetToolDefinitions()
-            .Concat(_camera?.GetToolDefinitions() ?? []);
+            .Concat(_camera?.GetToolDefinitions() ?? [])
+            .Concat(_tts?.GetToolDefinitions()    ?? []);
         var toolNames = string.Join(", ", allDefs.Select(t => t.Name));
         var prompt = _tapePlanTemplate
             .Replace("{tools}",   toolNames)
@@ -520,6 +528,7 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
     {
         _memory.Dispose();
         _camera?.Dispose();
+        _tts?.Dispose();
     }
 }
 
