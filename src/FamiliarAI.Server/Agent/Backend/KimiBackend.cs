@@ -19,7 +19,7 @@ namespace FamiliarAI.Server.Agent.Backend;
 /// </summary>
 public sealed class KimiBackend : IDisposable
 {
-    private const string BaseUrl = "https://api.moonshot.ai/v1";
+    private const string BaseUrl = "https://api.moonshot.ai/v1/";
 
     private readonly HttpClient _http;
     private readonly string _model;
@@ -76,7 +76,7 @@ public sealed class KimiBackend : IDisposable
 
         _logger.LogDebug("Kimi request: {Messages}", body.ToJsonString());
 
-        using var request = new HttpRequestMessage(HttpMethod.Post, "/chat/completions");
+        using var request = new HttpRequestMessage(HttpMethod.Post, "chat/completions");
         request.Content = new StringContent(body.ToJsonString(), Encoding.UTF8, "application/json");
 
         using var response = await _http.SendAsync(
@@ -213,7 +213,7 @@ public sealed class KimiBackend : IDisposable
             ["messages"]   = new JsonArray { MakeUserMessage(prompt) },
         };
 
-        using var request = new HttpRequestMessage(HttpMethod.Post, "/chat/completions");
+        using var request = new HttpRequestMessage(HttpMethod.Post, "chat/completions");
         request.Content = new StringContent(body.ToJsonString(), Encoding.UTF8, "application/json");
 
         using var response = await _http.SendAsync(request, ct);
