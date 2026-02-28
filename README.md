@@ -195,9 +195,9 @@ Connect to `ws://{host}:{port}/ws`.
 | `recall` | ✓ | Semantic search over past memories |
 | `tom` | ✓ | Theory of Mind: perspective-taking scaffold |
 | `see` | With camera | Capture current RTSP frame → base64 JPEG |
-| `look` | With camera | ONVIF PTZ pan/tilt (left/right/up/down, 1–90°) |
+| `look` | With camera | ONVIF PTZ pan/tilt |
 | `say` | With TTS | Speak text via VOICEVOX or ElevenLabs |
-| `walk` | With mobility | Tuya robot vacuum: forward/backward/left/right/stop with optional duration |
+| `walk` | With mobility | Tuya robot vacuum: direction control |
 
 ---
 
