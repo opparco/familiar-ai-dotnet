@@ -1,23 +1,35 @@
-using FamiliarAI.Server.Models;
+using FamiliarAI.Server.Agent;
 
 namespace FamiliarAI.Server;
 
 /// <summary>
 /// Background service that consumes the input queue and fires desire turns
 /// when idle — mirrors aio_server.py _run_agent_loop().
+///
+/// Loop:
+///   1. Wait up to IdleCheckInterval for a user message.
+///   2. If message arrives → RunUserTurnAsync.
+///   3. If timeout → check idle duration vs DesireCooldown.
+///      If cooldown elapsed → ask DesireSystem for dominant prompt.
+///      If prompt exists → Satisfy the desire, then RunDesireTurnAsync.
 /// </summary>
 public sealed class AgentLoopService : BackgroundService
 {
     private static readonly TimeSpan IdleCheckInterval = TimeSpan.FromSeconds(10);
-    private static readonly TimeSpan DesireCooldown = TimeSpan.FromSeconds(90);
+    private static readonly TimeSpan DesireCooldown    = TimeSpan.FromSeconds(90);
 
     private readonly FamiliarServer _server;
+    private readonly DesireSystem   _desires;
     private readonly ILogger<AgentLoopService> _logger;
 
-    public AgentLoopService(FamiliarServer server, ILogger<AgentLoopService> logger)
+    public AgentLoopService(
+        FamiliarServer server,
+        DesireSystem desires,
+        ILogger<AgentLoopService> logger)
     {
-        _server = server;
-        _logger = logger;
+        _server  = server;
+        _desires = desires;
+        _logger  = logger;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -47,20 +59,32 @@ public sealed class AgentLoopService : BackgroundService
 
             if (userInput is not null)
             {
-                _logger.LogDebug("Processing user input: {Input}", userInput);
                 await _server.RunUserTurnAsync(userInput, stoppingToken);
+                continue;
             }
-            else
-            {
-                // Idle path: check if desire cooldown has elapsed
-                var idleFor = DateTimeOffset.UtcNow - _server.LastInteractionAt;
-                if (idleFor < DesireCooldown)
-                    continue;
 
-                // TODO: replace with real DesireSystem once ported
-                // For now just log that we'd fire a desire turn
-                _logger.LogDebug("Idle {Seconds:F0}s — desire check (stub: no desires configured)", idleFor.TotalSeconds);
+            // ── Idle path: desire check ────────────────────────────────
+            var idleFor = DateTimeOffset.UtcNow - _server.LastInteractionAt;
+            if (idleFor < DesireCooldown)
+                continue;
+
+            var prompt = _desires.DominantAsPrompt();
+            if (prompt is null)
+            {
+                _logger.LogDebug("Idle {Secs:F0}s — no desire above threshold", idleFor.TotalSeconds);
+                continue;
             }
+
+            // Satisfy before running the turn so a long turn doesn't re-trigger the same desire
+            var dominant = _desires.GetDominant();
+            var name     = dominant?.name ?? "unknown";
+            _desires.Satisfy(name);
+
+            _logger.LogInformation(
+                "Desire fired: {Name} (idle {Secs:F0}s) — {Prompt}",
+                name, idleFor.TotalSeconds, prompt[..Math.Min(60, prompt.Length)]);
+
+            await _server.RunDesireTurnAsync(name, prompt, stoppingToken);
         }
 
         _logger.LogInformation("Agent loop stopped");

@@ -86,6 +86,7 @@ builder.Services.AddSingleton<IFamiliarAgent>(sp =>
     return new EmbodiedAgent(config, backend, memory, sp.GetRequiredService<ILogger<EmbodiedAgent>>(), camera, tts);
 });
 
+builder.Services.AddSingleton<DesireSystem>();
 builder.Services.AddSingleton<FamiliarServer>();
 builder.Services.AddHostedService<AgentLoopService>();
 
