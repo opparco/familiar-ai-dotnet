@@ -61,6 +61,17 @@ The server prints a banner and starts listening:
 ## Configuration
 
 All configuration is via environment variables.
+A `.env` file in the working directory (or alongside the executable) is loaded automatically at startup — variables already set in the environment take precedence.
+
+```ini
+# .env  (gitignored)
+API_KEY=sk-...
+AGENT_NAME=Familiar
+COMPANION_NAME=Alex
+CAMERA_HOST=192.168.1.100
+CAMERA_PASSWORD=secret
+TTS_ENGINE=voicevox
+```
 
 ### Core
 
