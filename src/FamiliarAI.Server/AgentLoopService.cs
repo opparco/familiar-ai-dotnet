@@ -21,16 +21,19 @@ public sealed class AgentLoopService : BackgroundService
 
     private readonly FamiliarServer _server;
     private readonly DesireSystem   _desires;
+    private readonly ChatLogger     _chatLogger;
     private readonly ILogger<AgentLoopService> _logger;
 
     public AgentLoopService(
         FamiliarServer server,
         DesireSystem desires,
+        ChatLogger chatLogger,
         ILogger<AgentLoopService> logger)
     {
-        _server  = server;
-        _desires = desires;
-        _logger  = logger;
+        _server     = server;
+        _desires    = desires;
+        _chatLogger = chatLogger;
+        _logger     = logger;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -79,8 +82,9 @@ public sealed class AgentLoopService : BackgroundService
             var dominant = _desires.GetDominant();
             var name     = dominant?.name ?? "unknown";
 
-            // Broadcast murmur so clients see the inner voice before the turn starts
+            // Echo murmur to stdout/log and broadcast to clients
             var murmur = GetMurmur(name);
+            _chatLogger.LogStatus(murmur);
             await _server.BroadcastAsync("status", new StatusData(murmur));
 
             // Check once more — a user message may have arrived while we were deciding

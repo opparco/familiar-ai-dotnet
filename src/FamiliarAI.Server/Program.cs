@@ -86,6 +86,7 @@ builder.Services.AddSingleton<IFamiliarAgent>(sp =>
     return new EmbodiedAgent(config, backend, memory, sp.GetRequiredService<ILogger<EmbodiedAgent>>(), camera, tts);
 });
 
+builder.Services.AddSingleton<ChatLogger>();
 builder.Services.AddSingleton<DesireSystem>();
 builder.Services.AddSingleton<FamiliarServer>();
 builder.Services.AddHostedService<AgentLoopService>();
@@ -113,6 +114,10 @@ Console.WriteLine($"  WebSocket : ws://{host}:{port}/ws");
 Console.WriteLine($"  Platform  : {platform}{(string.IsNullOrEmpty(apiKey) ? " (no API key → stub)" : "")}");
 Console.WriteLine($"  Camera    : {(string.IsNullOrEmpty(cameraHost) ? "not configured" : $"{cameraHost}:{cameraPort} (ONVIF)")}");
 Console.WriteLine($"  TTS       : {ttsEngine.ToLower()}{(ttsEngine.ToLower() == "voicevox" ? $" (speaker {voicevoxSpk}, {voicevoxUrl})" : "")}");
+var chatLogPath = Path.Combine(
+    Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+    ".familiar_ai", "chat.log");
+Console.WriteLine($"  Chat log  : {chatLogPath}");
 Console.WriteLine("  Press Ctrl+C to stop");
 Console.WriteLine();
 

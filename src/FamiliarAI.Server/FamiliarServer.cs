@@ -15,6 +15,7 @@ namespace FamiliarAI.Server;
 public sealed class FamiliarServer
 {
     private readonly IFamiliarAgent _agent;
+    private readonly ChatLogger _chatLogger;
     private readonly ILogger<FamiliarServer> _logger;
 
     // All connected clients: id → socket
@@ -31,10 +32,11 @@ public sealed class FamiliarServer
     // Updated whenever a user message arrives (for desire cooldown check)
     public DateTimeOffset LastInteractionAt { get; private set; } = DateTimeOffset.UtcNow;
 
-    public FamiliarServer(IFamiliarAgent agent, ILogger<FamiliarServer> logger)
+    public FamiliarServer(IFamiliarAgent agent, ChatLogger chatLogger, ILogger<FamiliarServer> logger)
     {
-        _agent = agent;
-        _logger = logger;
+        _agent      = agent;
+        _chatLogger = chatLogger;
+        _logger     = logger;
     }
 
     // ---------------------------------------------------------------
@@ -114,6 +116,8 @@ public sealed class FamiliarServer
 
                 if (!string.IsNullOrEmpty(message))
                 {
+                    _chatLogger.LogUserMessage(CompanionName, message);
+
                     // Broadcast user message to all clients immediately
                     await BroadcastAsync("user_message", new UserMessageData(CompanionName, message));
 
@@ -147,10 +151,11 @@ public sealed class FamiliarServer
         var callbacks = new TurnCallbacks(
             OnAction: (name, input) =>
             {
-                var icon = GetActionIcon(name);
+                var icon  = GetActionIcon(name);
                 var label = FormatAction(name, input);
-                var data = new ActionData(name, icon, label, input);
+                var data  = new ActionData(name, icon, label, input);
                 actionsLog.Add(data);
+                _chatLogger.LogAction(icon, label);
                 _ = BroadcastAsync("action", data);
             },
             OnText: chunk =>
@@ -163,8 +168,10 @@ public sealed class FamiliarServer
         try
         {
             await _agent.RunAsync(userInput, callbacks, ct: ct);
+            var fullText = string.Concat(textBuffer);
+            _chatLogger.LogAgentText(AgentName, fullText);
             await BroadcastAsync("response_complete",
-                new ResponseCompleteData(string.Concat(textBuffer), actionsLog));
+                new ResponseCompleteData(fullText, actionsLog));
         }
         catch (OperationCanceledException) { throw; }
         catch (Exception ex)
@@ -181,8 +188,9 @@ public sealed class FamiliarServer
         var callbacks = new TurnCallbacks(
             OnAction: (name, input) =>
             {
-                var icon = GetActionIcon(name);
+                var icon  = GetActionIcon(name);
                 var label = FormatAction(name, input);
+                _chatLogger.LogAction(icon, label);
                 _ = BroadcastAsync("action", new ActionData(name, icon, label, input));
             },
             OnText: chunk =>
@@ -195,8 +203,10 @@ public sealed class FamiliarServer
         try
         {
             await _agent.RunAsync("", callbacks, innerVoice: prompt, ct: ct);
+            var fullText = string.Concat(textBuffer);
+            _chatLogger.LogAgentText(AgentName, fullText);
             await BroadcastAsync("response_complete",
-                new ResponseCompleteData(string.Concat(textBuffer), []));
+                new ResponseCompleteData(fullText, []));
         }
         catch (OperationCanceledException) { throw; }
         catch (Exception ex)
