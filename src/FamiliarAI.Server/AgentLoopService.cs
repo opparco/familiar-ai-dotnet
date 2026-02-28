@@ -1,4 +1,5 @@
 using FamiliarAI.Server.Agent;
+using FamiliarAI.Server.Models;
 
 namespace FamiliarAI.Server;
 
@@ -75,18 +76,44 @@ public sealed class AgentLoopService : BackgroundService
                 continue;
             }
 
-            // Satisfy before running the turn so a long turn doesn't re-trigger the same desire
             var dominant = _desires.GetDominant();
             var name     = dominant?.name ?? "unknown";
+
+            // Broadcast murmur so clients see the inner voice before the turn starts
+            var murmur = GetMurmur(name);
+            await _server.BroadcastAsync("status", new StatusData(murmur));
+
+            // Check once more — a user message may have arrived while we were deciding
+            if (_server.InputChannel.Reader.TryRead(out var intercepted))
+            {
+                _logger.LogDebug("Desire pre-empted by user message");
+                await _server.RunUserTurnAsync(intercepted, stoppingToken);
+                continue;
+            }
+
+            // Satisfy before running so a long turn doesn't re-trigger the same desire
             _desires.Satisfy(name);
 
             _logger.LogInformation(
-                "Desire fired: {Name} (idle {Secs:F0}s) — {Prompt}",
-                name, idleFor.TotalSeconds, prompt[..Math.Min(60, prompt.Length)]);
+                "Desire fired: {Name} (idle {Secs:F0}s)",
+                name, idleFor.TotalSeconds);
 
             await _server.RunDesireTurnAsync(name, prompt, stoppingToken);
         }
 
         _logger.LogInformation("Agent loop stopped");
     }
+
+    // ---------------------------------------------------------------
+    // Murmur strings (shown to clients before the desire turn runs)
+    // ---------------------------------------------------------------
+
+    private static string GetMurmur(string desireName) => desireName switch
+    {
+        "look_around"      => "なんか外が気になってきた…",
+        "explore"          => "ちょっと動きたくなってきたな…",
+        "greet_companion"  => "誰かいるかな…",
+        "rest"             => "少し休憩しよかな…",
+        _                  => "ちょっと気になることがあって…",
+    };
 }
