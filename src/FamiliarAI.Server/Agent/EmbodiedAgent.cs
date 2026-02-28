@@ -21,6 +21,7 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
     private readonly KimiBackend _backend;
     private readonly ObservationMemory _memory;
     private readonly MemoryTool _memoryTool;
+    private readonly TomTool _tomTool;
     private readonly CameraTool? _camera;
     private readonly TtsTool? _tts;
     private readonly ILogger<EmbodiedAgent> _logger;
@@ -59,6 +60,7 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
         _camera      = camera;
         _tts         = tts;
         _memoryTool  = new MemoryTool(memory);
+        _tomTool     = new TomTool(memory, config.CompanionName);
 
         var promptDir = ResolvePromptDir();
         _systemTemplate     = File.ReadAllText(Path.Combine(promptDir, "system.md"));
@@ -125,6 +127,7 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
 
         // ── Build tool list ───────────────────────────────────────────
         var tools = _memoryTool.GetToolDefinitions().ToList();
+        tools.AddRange(_tomTool.GetToolDefinitions());
         if (_camera is not null) tools.AddRange(_camera.GetToolDefinitions());
         if (_tts    is not null) tools.AddRange(_tts.GetToolDefinitions());
 
@@ -264,6 +267,9 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
     {
         if (name is "remember" or "recall")
             return _memoryTool.CallAsync(name, input);
+
+        if (name == "tom")
+            return _tomTool.CallAsync(name, input, ct);
 
         if (name is "see" or "look" && _camera is not null)
             return _camera.CallAsync(name, input, ct);
@@ -436,6 +442,7 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
     {
         if (string.IsNullOrWhiteSpace(userInput)) return "";
         var allDefs   = _memoryTool.GetToolDefinitions()
+            .Concat(_tomTool.GetToolDefinitions())
             .Concat(_camera?.GetToolDefinitions() ?? [])
             .Concat(_tts?.GetToolDefinitions()    ?? []);
         var toolNames = string.Join(", ", allDefs.Select(t => t.Name));
