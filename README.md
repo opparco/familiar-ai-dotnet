@@ -83,12 +83,8 @@ Place them in `wwwroot/character-images/`:
 |---|---|
 | `open_close.png` | Eyes open, mouth closed *(idle default)* |
 | `open_open.png` | Eyes open, mouth open |
-| `close_close.png` | Eyes closed, mouth closed *(blinking)* |
+| `close_close.png` | Eyes closed, mouth closed |
 | `close_open.png` | Eyes closed, mouth open |
-
-### Server-injected config
-
-The server exposes a `/config.js` endpoint that injects `appConfig` (agent name, companion name, typewriter delay) as a global variable into the page — no bundler or build pipeline required.
 
 ---
 
