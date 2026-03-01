@@ -1,3 +1,4 @@
+using System.Text.Json;
 using FamiliarAI.Server;
 using FamiliarAI.Server.Agent;
 using FamiliarAI.Server.Agent.Backend;
@@ -115,6 +116,19 @@ builder.Services.AddHostedService<AgentLoopService>();
 var app = builder.Build();
 
 app.UseWebSockets(new WebSocketOptions { KeepAliveInterval = TimeSpan.FromSeconds(30) });
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
+app.MapGet("/config.js", () =>
+{
+    var js = $"const appConfig = {JsonSerializer.Serialize(new
+    {
+        typewriterDelay = 30,
+        agentName,
+        companionName,
+    })};";
+    return Results.Content(js, "application/javascript");
+});
 
 app.MapGet("/ws", async (HttpContext ctx, FamiliarServer server) =>
 {
@@ -131,6 +145,7 @@ app.MapGet("/ws", async (HttpContext ctx, FamiliarServer server) =>
 // ---- banner ----
 Console.WriteLine();
 Console.WriteLine($"  familiar-ai  [{agentName}]");
+Console.WriteLine($"  Web UI    : http://{host}:{port}/");
 Console.WriteLine($"  WebSocket : ws://{host}:{port}/ws");
 Console.WriteLine($"  Platform  : {platform}{(string.IsNullOrEmpty(apiKey) ? " (no API key → stub)" : "")}");
 Console.WriteLine($"  Camera    : {(string.IsNullOrEmpty(cameraHost) ? "not configured" : $"{cameraHost}:{cameraPort} (ONVIF)")}");

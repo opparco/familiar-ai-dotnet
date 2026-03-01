@@ -1,7 +1,7 @@
 # familiar-ai — .NET Server
 
 ASP.NET Core 9 WebSocket server for the familiar-ai embodied agent.
-A port of the Python `FamiliarServer` / `EmbodiedAgent` stack.
+A port of the Python `src/familiar_agent/` stack.
 
 ## What it does
 
@@ -55,6 +55,40 @@ The server prints a banner and starts listening:
   Chat log  : C:\Users\yourname\.familiar_ai\chat.log
   Press Ctrl+C to stop
 ```
+
+---
+
+## Web UI
+
+The server ships a browser-based chat interface at `http://{WEB_HOST}:{WEB_PORT}/` (default: `http://localhost:5000/`).
+
+Open the URL in any modern browser after starting the server — no build step required.
+
+### Features
+
+- **WebSocket chat** — sends messages and streams agent replies character by character with a typewriter effect.
+- **Avatar panel** — displays a character sprite with:
+  - **Lip-sync animation** driven by real-time phoneme analysis of the streamed text (detects Japanese vowels, long vowels, sokuon, hatsuon, etc.).
+  - **Blink animation** at random 2–6 s intervals.
+- **Tool action notifications** — tool calls (camera, memory, TTS, etc.) appear as labelled action rows in the chat.
+- **Auto-reconnect** — reconnects to the WebSocket every 5 s if the connection drops.
+- **Clear button / `/clear` command** — sends `clear_history` to reset the conversation context.
+
+### Character images
+
+The avatar switches between four PNG images based on speaking state and blink timing.
+Place them in `wwwroot/character-images/`:
+
+| Filename | State |
+|---|---|
+| `open_close.png` | Eyes open, mouth closed *(idle default)* |
+| `open_open.png` | Eyes open, mouth open |
+| `close_close.png` | Eyes closed, mouth closed *(blinking)* |
+| `close_open.png` | Eyes closed, mouth open |
+
+### Server-injected config
+
+The server exposes a `/config.js` endpoint that injects `appConfig` (agent name, companion name, typewriter delay) as a global variable into the page — no bundler or build pipeline required.
 
 ---
 
