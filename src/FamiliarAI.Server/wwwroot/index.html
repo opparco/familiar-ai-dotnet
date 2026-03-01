@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>familiar-ai</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="app">
+        <div class="main">
+            <div class="chat-panel">
+                <div class="messages" id="output"></div>
+            </div>
+            <div class="input-row">
+                <input type="text" id="input" autofocus>
+                <button id="btn-send">Send</button>
+                <button id="btn-clear">Clear</button>
+            </div>
+        </div>
+
+        <div class="side-panel">
+            <div class="avatar-box">
+                <img id="avatar-img" src="/character-images/open_close.png" alt="">
+            </div>
+            <div class="status-panel" id="status-panel">
+                <span id="status-text">Waiting for server connection...</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="/config.js"></script>
+    <script type="module" src="/js/app.js"></script>
+</body>
+</html>
