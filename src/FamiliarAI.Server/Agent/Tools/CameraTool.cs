@@ -231,13 +231,13 @@ public sealed class CameraTool : IDisposable
             return "Camera not available.";
         try
         {
-            // Tapo C220 axis convention: positive x = physical LEFT, positive y = physical DOWN
+            // Tapo C220 axis convention: positive x = physical LEFT, positive y = physical UP
             var (pan, tilt) = direction switch
             {
                 "left"  => ( degrees / 180.0,  0.0),
                 "right" => (-degrees / 180.0,  0.0),
-                "up"    => ( 0.0, -degrees / 90.0),
-                "down"  => ( 0.0,  degrees / 90.0),
+                "up"    => ( 0.0,  degrees / 90.0),
+                "down"  => ( 0.0, -degrees / 90.0),
                 _       => (0.0, 0.0),
             };
 
