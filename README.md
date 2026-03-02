@@ -108,9 +108,9 @@ TTS_ENGINE=voicevox
 | Variable | Default | Description |
 |---|---|---|
 | `API_KEY` | *(required)* | API key for the chosen platform. Without this the server runs as `StubAgent` (echoes text, no LLM). |
-| `PLATFORM` | `kimi` | LLM backend: `kimi` (Moonshot AI) or `openai` / `lmstudio` (OpenAI-compatible: LM Studio, Ollama, vLLM, …). |
-| `BASE_URL` | *(see below)* | Base URL for the LLM API. Default: `https://api.moonshot.ai/v1` for kimi; `http://localhost:1234/v1` for openai/lmstudio. |
-| `MODEL` | `kimi-k2.5` | Model name. For LM Studio use the exact model string shown in the UI; default for openai/lmstudio is `local-model`. |
+| `PLATFORM` | `kimi` | LLM backend: `kimi` (Moonshot AI) or `openai` (OpenAI-compatible: Ollama, vLLM, LM Studio, …). |
+| `BASE_URL` | *(see below)* | Base URL for the LLM API. Default: `https://api.moonshot.ai/v1` for kimi; `http://localhost:11434/v1` for Ollama, `http://localhost:8000/v1` for vLLM. |
+| `MODEL` | `kimi-k2.5` | Model name. Use the model tag as shown in the backend (e.g. `llama3.2` for Ollama); default is `local-model`. |
 | `AGENT_NAME` | `Familiar` | Agent's display name |
 | `COMPANION_NAME` | `USER` | Human's display name |
 | `WEB_HOST` | `0.0.0.0` | Bind address |

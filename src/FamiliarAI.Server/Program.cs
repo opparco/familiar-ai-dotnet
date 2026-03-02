@@ -55,7 +55,7 @@ builder.Services.AddSingleton<IFamiliarAgent>(sp =>
 
     ILlmBackend backend = platform.ToLower() switch
     {
-        "openai" or "lmstudio" => new OpenAICompatibleBackend(
+        "openai" => new OpenAICompatibleBackend(
             apiKey,
             string.IsNullOrEmpty(model) ? "local-model" : model,
             string.IsNullOrEmpty(baseUrl) ? "http://localhost:1234/v1" : baseUrl,
@@ -156,7 +156,7 @@ Console.WriteLine();
 Console.WriteLine($"  familiar-ai  [{agentName}]");
 Console.WriteLine($"  Web UI    : http://{host}:{port}/");
 Console.WriteLine($"  WebSocket : ws://{host}:{port}/ws");
-var effectiveBaseUrl = platform.ToLower() is "openai" or "lmstudio"
+var effectiveBaseUrl = platform.ToLower() is "openai"
     ? (string.IsNullOrEmpty(baseUrl) ? "http://localhost:1234/v1" : baseUrl)
     : "https://api.moonshot.ai/v1";
 Console.WriteLine($"  Platform  : {platform}{(string.IsNullOrEmpty(apiKey) ? " (no API key → stub)" : "")} — {effectiveBaseUrl}");
