@@ -2,6 +2,7 @@
  * アニメーション管理モジュール
  * タイプライター効果、日本語音節に基づく口パクアニメーション、瞬きを管理
  */
+import { sleep } from './utils.js';
 
 /**
  * 日本語テキストの音節解析クラス
@@ -151,7 +152,7 @@ export class AnimationManager {
         this.updateCharacterImage(false, this.currentMouthOpen);
 
         // 150ms後に目を開く
-        await this.sleep(150);
+        await sleep(150);
 
         this.isBlinking = false;
         this.updateCharacterImage(true, this.currentMouthOpen);
@@ -214,19 +215,10 @@ export class AnimationManager {
                 if (!this.isTalking) break;
                 this.updateCharacterImage(this.currentEyesOpen,
                     this.phonemeAnalyzer.shouldOpenMouth(phoneme.type));
-                await this.sleep(this.chunkCharDelay * phoneme.duration * speed);
+                await sleep(this.chunkCharDelay * phoneme.duration * speed);
             }
         }
         this.isAnimatingChunk = false;
-    }
-
-    /**
-     * ユーティリティ：指定時間待機
-     * @param {number} ms - 待機時間（ミリ秒）
-     * @returns {Promise<void>}
-     */
-    sleep(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
     }
 
     /**

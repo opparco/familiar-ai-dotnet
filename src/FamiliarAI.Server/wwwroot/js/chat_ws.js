@@ -2,6 +2,8 @@
  * チャット機能モジュール (WebSocket版)
  * メッセージの送受信とUI更新を管理
  */
+import { sleep } from './utils.js';
+
 export class ChatManager {
     constructor(settings, animationManager) {
         this.settings = settings;
@@ -21,7 +23,7 @@ export class ChatManager {
         // タイプライター用文字キュー
         this.displayQueue = [];
         this.isDraining = false;
-        this.charDelay = 22; // ms/char（通常速度）
+        this.charDelay = settings.typewriterDelay ?? 22; // ms/char
 
         this.initWebSocket();
         this.initEventListeners();
@@ -83,22 +85,11 @@ export class ChatManager {
                 break;
 
             case 'response_complete':
-                this._flushDisplayQueue();
-                this.isProcessing = false;
-                this.currentAiWrap = null;
-                this.currentAiText = null;
-                this._setInputEnabled(true);
-                this.animationManager.stopTalking();
+                this._endResponse();
                 break;
 
             case 'error':
-                this._flushDisplayQueue();
-                this.addError(data.data.message);
-                this.isProcessing = false;
-                this.currentAiWrap = null;
-                this.currentAiText = null;
-                this._setInputEnabled(true);
-                this.animationManager.stopTalking();
+                this._endResponse(data.data.message);
                 break;
 
             case 'history_cleared':
@@ -170,6 +161,16 @@ export class ChatManager {
     }
 
     // ===== UI ヘルパー =====
+
+    _endResponse(errorMessage = null) {
+        this._flushDisplayQueue();
+        if (errorMessage != null) this.addError(errorMessage);
+        this.isProcessing = false;
+        this.currentAiWrap = null;
+        this.currentAiText = null;
+        this._setInputEnabled(true);
+        this.animationManager.stopTalking();
+    }
 
     _setInputEnabled(enabled) {
         this.input.disabled = !enabled;
@@ -263,7 +264,7 @@ export class ChatManager {
                 this.currentAiText.textContent += char;
                 this.scrollToBottom();
             }
-            if (delay > 0) await this._sleep(delay);
+            if (delay > 0) await sleep(delay);
         }
         this.isDraining = false;
     }
@@ -310,7 +311,4 @@ export class ChatManager {
         this.output.scrollTop = this.output.scrollHeight;
     }
 
-    _sleep(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
-    }
 }
