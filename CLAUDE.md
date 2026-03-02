@@ -29,10 +29,12 @@ All config is via environment variables. A `.env` file in the working directory 
 
 | Variable | Default | Notes |
 |---|---|---|
-| `API_KEY` | *(required)* | Kimi (Moonshot AI) key. Without it → `StubAgent`. |
+| `API_KEY` | *(required)* | API key for the chosen platform. Without it → `StubAgent`. |
+| `PLATFORM` | `kimi` | `kimi` — Moonshot AI; `openai` / `lmstudio` — OpenAI-compatible (e.g. LM Studio). |
+| `BASE_URL` | *(see below)* | Base URL for the LLM API. Default: `https://api.moonshot.ai/v1` for kimi, `http://localhost:1234/v1` for openai/lmstudio. |
+| `MODEL` | `kimi-k2.5` | Model name. For LM Studio use the exact model string shown in the UI. |
 | `AGENT_NAME` | `Familiar` | |
 | `COMPANION_NAME` | `USER` | |
-| `MODEL` | `kimi-k2.5` | |
 | `WEB_HOST` / `WEB_PORT` | `0.0.0.0` / `5000` | |
 | `CAMERA_HOST` | *(unset)* | Leave unset to disable camera. |
 | `TTS_ENGINE` | `voicevox` | `voicevox` or `elevenlabs` |

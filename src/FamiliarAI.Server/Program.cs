@@ -13,6 +13,7 @@ var companionName = Environment.GetEnvironmentVariable("COMPANION_NAME") ?? "USE
 var apiKey        = Environment.GetEnvironmentVariable("API_KEY")        ?? "";
 var platform      = Environment.GetEnvironmentVariable("PLATFORM")       ?? "kimi";
 var model         = Environment.GetEnvironmentVariable("MODEL")          ?? "";
+var baseUrl       = Environment.GetEnvironmentVariable("BASE_URL")       ?? "";
 var host          = Environment.GetEnvironmentVariable("WEB_HOST")       ?? "0.0.0.0";
 var port          = int.TryParse(Environment.GetEnvironmentVariable("WEB_PORT"), out var p) ? p : 5000;
 
@@ -52,8 +53,18 @@ builder.Services.AddSingleton<IFamiliarAgent>(sp =>
         return new StubAgent(config);
     }
 
-    var kimiModel = string.IsNullOrEmpty(model) ? "kimi-k2.5" : model;
-    var backend   = new KimiBackend(apiKey, kimiModel, sp.GetRequiredService<ILogger<KimiBackend>>());
+    ILlmBackend backend = platform.ToLower() switch
+    {
+        "openai" or "lmstudio" => new OpenAICompatibleBackend(
+            apiKey,
+            string.IsNullOrEmpty(model) ? "local-model" : model,
+            string.IsNullOrEmpty(baseUrl) ? "http://localhost:1234/v1" : baseUrl,
+            sp.GetRequiredService<ILogger<OpenAICompatibleBackend>>()),
+        _ => new KimiBackend(
+            apiKey,
+            string.IsNullOrEmpty(model) ? "kimi-k2.5" : model,
+            sp.GetRequiredService<ILogger<KimiBackend>>()),
+    };
 
     // ruri-v3 embedding: lazy attempt, fall back to StubAgent if model files missing
     RuriEmbedding? embedder = null;
@@ -145,7 +156,10 @@ Console.WriteLine();
 Console.WriteLine($"  familiar-ai  [{agentName}]");
 Console.WriteLine($"  Web UI    : http://{host}:{port}/");
 Console.WriteLine($"  WebSocket : ws://{host}:{port}/ws");
-Console.WriteLine($"  Platform  : {platform}{(string.IsNullOrEmpty(apiKey) ? " (no API key → stub)" : "")}");
+var effectiveBaseUrl = platform.ToLower() is "openai" or "lmstudio"
+    ? (string.IsNullOrEmpty(baseUrl) ? "http://localhost:1234/v1" : baseUrl)
+    : "https://api.moonshot.ai/v1";
+Console.WriteLine($"  Platform  : {platform}{(string.IsNullOrEmpty(apiKey) ? " (no API key → stub)" : "")} — {effectiveBaseUrl}");
 Console.WriteLine($"  Camera    : {(string.IsNullOrEmpty(cameraHost) ? "not configured" : $"{cameraHost}:{cameraPort} (ONVIF)")}");
 Console.WriteLine($"  TTS       : {ttsEngine.ToLower()}{(ttsEngine.ToLower() == "voicevox" ? $" (speaker {voicevoxSpk}, {voicevoxUrl})" : "")}");
 Console.WriteLine($"  Mobility  : {(string.IsNullOrEmpty(tuyaApiKey) ? "not configured" : $"Tuya {tuyaRegion.ToUpper()} device={tuyaDeviceId[..Math.Min(8, tuyaDeviceId.Length)]}…")}");

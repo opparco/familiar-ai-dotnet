@@ -5,7 +5,7 @@ A port of the Python `src/familiar_agent/` stack.
 
 ## What it does
 
-- Runs a **ReAct loop** (THINK → ACT → OBSERVE) powered by Kimi (Moonshot AI) LLM
+- Runs a **ReAct loop** (THINK → ACT → OBSERVE) powered by a pluggable LLM backend (Kimi / OpenAI-compatible)
 - **Sees** the world through an ONVIF/RTSP Wi-Fi camera (Tapo C220 or compatible)
 - **Speaks** via VOICEVOX (local, Japanese-optimised) or ElevenLabs (cloud)
 - **Remembers** using SQLite + ruri-v3 ONNX vector embeddings
@@ -35,7 +35,7 @@ mkdir -p ~/.familiar_ai/models/ruri-v3
 # copy model.onnx and tokenizer.model there
 
 # 2. Set environment variables (see Configuration below)
-export API_KEY=sk-...          # Kimi (Moonshot AI) API key
+export API_KEY=sk-...          # API key for the chosen platform (Kimi by default)
 export AGENT_NAME=Familiar
 export COMPANION_NAME=Alex
 
@@ -107,10 +107,12 @@ TTS_ENGINE=voicevox
 
 | Variable | Default | Description |
 |---|---|---|
-| `API_KEY` | *(required)* | Kimi (Moonshot AI) API key. Without this the server runs as `StubAgent` (echoes text, no LLM). |
+| `API_KEY` | *(required)* | API key for the chosen platform. Without this the server runs as `StubAgent` (echoes text, no LLM). |
+| `PLATFORM` | `kimi` | LLM backend: `kimi` (Moonshot AI) or `openai` / `lmstudio` (OpenAI-compatible: LM Studio, Ollama, vLLM, …). |
+| `BASE_URL` | *(see below)* | Base URL for the LLM API. Default: `https://api.moonshot.ai/v1` for kimi; `http://localhost:1234/v1` for openai/lmstudio. |
+| `MODEL` | `kimi-k2.5` | Model name. For LM Studio use the exact model string shown in the UI; default for openai/lmstudio is `local-model`. |
 | `AGENT_NAME` | `Familiar` | Agent's display name |
 | `COMPANION_NAME` | `USER` | Human's display name |
-| `MODEL` | `kimi-k2.5` | Kimi model ID |
 | `WEB_HOST` | `0.0.0.0` | Bind address |
 | `WEB_PORT` | `5000` | Bind port |
 
@@ -240,7 +242,7 @@ Program.cs
                      AgentLoopService          (background loop)
                            │  user turn / desire turn
                      EmbodiedAgent             (ReAct loop, TAPE planning)
-                        ├── KimiBackend        (Moonshot AI SSE streaming)
+                        ├── ILlmBackend        (KimiBackend | OpenAICompatibleBackend)
                         ├── ObservationMemory  (SQLite + ruri-v3 vectors)
                         ├── MemoryTool         (remember / recall)
                         ├── TomTool            (Theory of Mind)
@@ -302,7 +304,7 @@ It shares the same WebSocket protocol, memory database schema, and prompt files,
 so a frontend written for the Python server works with this one unchanged.
 
 Key differences:
-- LLM backend: **Kimi only** (Python supports Anthropic / Gemini / OpenAI / Kimi)
+- LLM backend: **Kimi** (default) or any **OpenAI-compatible** endpoint (Python also supports Anthropic / Gemini)
 - No TUI or REPL — WebSocket server only
 - Embedding model: **ruri-v3 ONNX** (Python uses `multilingual-e5-small` via torch)
 - Mobility backend: **Tuya Cloud API** (Python uses `tinytuya` library directly)
