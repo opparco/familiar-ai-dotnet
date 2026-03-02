@@ -5,9 +5,7 @@ using FamiliarAI.Server.Agent.Backend;
 using FamiliarAI.Server.Agent.Tools;
 
 // ---- load .env (if present) ----
-// NoClobber: existing environment variables take precedence.
-// TraversePath: walks up from working directory to find .env.
-DotNetEnv.Env.NoClobber().TraversePath().Load();
+DotNetEnv.Env.Load();
 
 // ---- configuration ----
 var agentName     = Environment.GetEnvironmentVariable("AGENT_NAME")     ?? "Familiar";
