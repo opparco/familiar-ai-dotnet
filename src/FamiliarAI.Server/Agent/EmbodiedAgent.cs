@@ -18,7 +18,7 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
 {
     private const int MaxIterations = 50;
 
-    private readonly KimiBackend _backend;
+    private readonly ILlmBackend _backend;
     private readonly ObservationMemory _memory;
     private readonly MemoryTool _memoryTool;
     private readonly TomTool _tomTool;
@@ -47,7 +47,7 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
 
     public EmbodiedAgent(
         AgentConfig config,
-        KimiBackend backend,
+        ILlmBackend backend,
         ObservationMemory memory,
         ILogger<EmbodiedAgent> logger,
         CameraTool?   camera   = null,
@@ -119,7 +119,7 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
         List<JsonObject> snapshot;
         lock (_historyLock)
         {
-            _history.Add(KimiBackend.MakeUserMessage(effectiveInput));
+            _history.Add(_backend.MakeUserMessage(effectiveInput));
             snapshot = [.. _history];
         }
 
@@ -225,7 +225,7 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
                 // Nudge: 2+ tool calls without say()
                 if (nonSayStreak >= 2 && !sayUsed)
                 {
-                    var nudge = KimiBackend.MakeUserMessage(
+                    var nudge = _backend.MakeUserMessage(
                         "REMINDER: Writing text is silent. You MUST call say() to be heard. " +
                         "Call say() NOW. Keep it to 1-2 sentences.");
                     lock (_historyLock) { _history.Add(nudge); snapshot = [.. _history]; }
@@ -233,7 +233,7 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
                 }
                 else if (sayUsed && nonSayStreak >= 2)
                 {
-                    var nudge = KimiBackend.MakeUserMessage("You already spoke. Stop exploring and end your turn now.");
+                    var nudge = _backend.MakeUserMessage("You already spoke. Stop exploring and end your turn now.");
                     lock (_historyLock) { _history.Add(nudge); snapshot = [.. _history]; }
                     nonSayStreak = 0;
                 }
@@ -247,7 +247,7 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
 
         // Max iterations — force final response
         _logger.LogWarning("Reached max iterations ({Max}). Forcing final response.", MaxIterations);
-        var forceMsg = KimiBackend.MakeUserMessage(
+        var forceMsg = _backend.MakeUserMessage(
             "Please summarize what you found and provide your final answer now.");
         lock (_historyLock) { _history.Add(forceMsg); snapshot = [.. _history]; }
 

@@ -29,10 +29,12 @@ All config is via environment variables. A `.env` file in the working directory 
 
 | Variable | Default | Notes |
 |---|---|---|
-| `API_KEY` | *(required)* | Kimi (Moonshot AI) key. Without it → `StubAgent`. |
+| `API_KEY` | *(required)* | API key for the chosen platform. Without it → `StubAgent`. |
+| `PLATFORM` | `kimi` | `kimi` — Moonshot AI; `openai` — OpenAI-compatible (e.g. Ollama, vLLM, LM Studio). |
+| `BASE_URL` | *(see below)* | Base URL for the LLM API. Default: `https://api.moonshot.ai/v1` for kimi; `http://localhost:11434/v1` for Ollama, `http://localhost:8000/v1` for vLLM. |
+| `MODEL` | `kimi-k2.5` | Model name. Use the model tag as shown in the backend (e.g. `llama3.2` for Ollama). |
 | `AGENT_NAME` | `Familiar` | |
 | `COMPANION_NAME` | `USER` | |
-| `MODEL` | `kimi-k2.5` | |
 | `WEB_HOST` / `WEB_PORT` | `0.0.0.0` / `5000` | |
 | `CAMERA_HOST` | *(unset)* | Leave unset to disable camera. |
 | `TTS_ENGINE` | `voicevox` | `voicevox` or `elevenlabs` |

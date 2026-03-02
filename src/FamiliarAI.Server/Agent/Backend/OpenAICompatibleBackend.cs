@@ -6,32 +6,28 @@ using System.Text.Json.Nodes;
 namespace FamiliarAI.Server.Agent.Backend;
 
 /// <summary>
-/// Moonshot AI Kimi backend.
+/// Generic OpenAI-compatible backend: LM Studio, Ollama, vLLM, plain OpenAI, etc.
 ///
-/// Kimi uses an OpenAI-compatible streaming API but includes a
-/// <c>reasoning_content</c> field in assistant messages (thinking tokens).
-/// That field MUST be round-tripped back in subsequent turns containing
-/// tool calls, otherwise the API returns:
-///   "thinking is enabled but reasoning_content is missing in assistant tool call message"
-///
-/// This backend captures <c>reasoning_content</c> from the SSE stream and
-/// preserves it in the returned <paramref name="rawAssistant"/> JsonObject.
+/// Uses the standard chat/completions streaming API with function-calling (tools) support.
+/// Does NOT handle reasoning_content (that is Kimi-specific — see KimiBackend).
 /// </summary>
-public sealed class KimiBackend : ILlmBackend, IDisposable
+public sealed class OpenAICompatibleBackend : ILlmBackend, IDisposable
 {
-    private const string BaseUrl = "https://api.moonshot.ai/v1/";
-
     private readonly HttpClient _http;
     private readonly string _model;
-    private readonly ILogger<KimiBackend> _logger;
+    private readonly ILogger<OpenAICompatibleBackend> _logger;
 
-    public KimiBackend(string apiKey, string model, ILogger<KimiBackend> logger)
+    public OpenAICompatibleBackend(
+        string apiKey,
+        string model,
+        string baseUrl,
+        ILogger<OpenAICompatibleBackend> logger)
     {
-        _model = model;
+        _model  = model;
         _logger = logger;
-        _http = new HttpClient { BaseAddress = new Uri(BaseUrl) };
+        _http   = new HttpClient { BaseAddress = new Uri(baseUrl.TrimEnd('/') + "/") };
         _http.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", apiKey);
+            new AuthenticationHeaderValue("Bearer", string.IsNullOrEmpty(apiKey) ? "local" : apiKey);
     }
 
     // ---------------------------------------------------------------
@@ -41,18 +37,13 @@ public sealed class KimiBackend : ILlmBackend, IDisposable
     public JsonObject MakeUserMessage(string content) =>
         new() { ["role"] = "user", ["content"] = content };
 
-    public static JsonObject MakeSystemMessage(string content) =>
+    private static JsonObject MakeSystemMessage(string content) =>
         new() { ["role"] = "system", ["content"] = content };
 
     // ---------------------------------------------------------------
     // Streaming turn
     // ---------------------------------------------------------------
 
-    /// <summary>
-    /// Stream one LLM turn.
-    /// Returns the parsed TurnResult and the raw assistant JsonObject
-    /// (including reasoning_content) that should be stored in history.
-    /// </summary>
     public async Task<(TurnResult Result, JsonObject RawAssistant)> StreamTurnAsync(
         string system,
         IReadOnlyList<JsonObject> history,
@@ -61,11 +52,10 @@ public sealed class KimiBackend : ILlmBackend, IDisposable
         Action<string>? onText,
         CancellationToken ct = default)
     {
-        // Flatten: system message first, then history
         var messages = new JsonArray();
         messages.Add(MakeSystemMessage(system));
         foreach (var msg in history)
-            messages.Add(msg.DeepClone()); // must clone to add to a new array
+            messages.Add(msg.DeepClone());
 
         var body = new JsonObject
         {
@@ -83,7 +73,7 @@ public sealed class KimiBackend : ILlmBackend, IDisposable
             body["tools"] = toolsArr;
         }
 
-        _logger.LogDebug("Kimi request: {Messages}", body.ToJsonString());
+        _logger.LogDebug("OpenAI-compat request: {Model} @ {Base}", _model, _http.BaseAddress);
 
         using var request = new HttpRequestMessage(HttpMethod.Post, "chat/completions");
         request.Content = new StringContent(body.ToJsonString(), Encoding.UTF8, "application/json");
@@ -95,11 +85,8 @@ public sealed class KimiBackend : ILlmBackend, IDisposable
         var stream = await response.Content.ReadAsStreamAsync(ct);
 
         // ── Parse SSE ────────────────────────────────────────────────
-        // Simple line-based parser: each SSE event starts with "data: "
-        var textChunks      = new List<string>();
-        var reasoningChunks = new List<string>();
-        // tool call delta accumulator: index → {id, name, arguments}
-        var rawTcs          = new Dictionary<int, RawTcAccum>();
+        var textChunks = new List<string>();
+        var rawTcs     = new Dictionary<int, RawTcAccum>();
         string? finishReason = null;
 
         using var reader = new StreamReader(stream, Encoding.UTF8);
@@ -125,13 +112,6 @@ public sealed class KimiBackend : ILlmBackend, IDisposable
                 finishReason = fr.GetString();
 
             if (!choice.TryGetProperty("delta", out var delta)) continue;
-
-            // reasoning_content (Kimi-specific thinking tokens)
-            if (delta.TryGetProperty("reasoning_content", out var rc) &&
-                rc.ValueKind == JsonValueKind.String)
-            {
-                reasoningChunks.Add(rc.GetString()!);
-            }
 
             // content
             if (delta.TryGetProperty("content", out var content) &&
@@ -179,14 +159,11 @@ public sealed class KimiBackend : ILlmBackend, IDisposable
 
         var stop = finishReason == "tool_calls" ? StopReason.ToolUse : StopReason.EndTurn;
 
-        // Build raw assistant — include reasoning_content so Kimi accepts it next turn
         var rawAssistant = new JsonObject
         {
             ["role"]    = "assistant",
             ["content"] = text.Length > 0 ? JsonValue.Create(text) : null,
         };
-        if (reasoningChunks.Count > 0)
-            rawAssistant["reasoning_content"] = string.Concat(reasoningChunks);
         if (toolCalls.Count > 0)
         {
             var tcsArr = new JsonArray();
