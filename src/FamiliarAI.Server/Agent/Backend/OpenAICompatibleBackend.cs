@@ -69,7 +69,7 @@ public sealed class OpenAICompatibleBackend : ILlmBackend, IDisposable
         {
             var toolsArr = new JsonArray();
             foreach (var t in tools)
-                toolsArr.Add(t.ToKimiFormat());
+                toolsArr.Add(t.ToOpenAIFormat());
             body["tools"] = toolsArr;
         }
 

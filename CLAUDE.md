@@ -85,7 +85,7 @@ class SomeTool
 }
 ```
 
-`ToolDefinition` uses Anthropic-style schema; `ToKimiFormat()` converts it to OpenAI function-calling format before sending to the API.
+`ToolDefinition` uses Anthropic-style schema; `ToOpenAIFormat()` converts it to OpenAI function-calling format before sending to the API.
 
 ### Prompt templates
 
