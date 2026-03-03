@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using FamiliarAI.Server.Agent.Backend;
+using FamiliarAI.Server.Agent;
 
 namespace FamiliarAI.Server.Agent.Tools;
 
@@ -10,8 +11,13 @@ namespace FamiliarAI.Server.Agent.Tools;
 public sealed class MemoryTool
 {
     private readonly ObservationMemory _store;
+    private readonly AgentTextConfig   _agentText;
 
-    public MemoryTool(ObservationMemory store) => _store = store;
+    public MemoryTool(ObservationMemory store, AgentTextConfig agentText)
+    {
+        _store     = store;
+        _agentText = agentText;
+    }
 
     public IReadOnlyList<ToolDefinition> GetToolDefinitions() =>
     [
@@ -32,7 +38,7 @@ public sealed class MemoryTool
                     ["emotion"] = new JsonObject
                     {
                         ["type"]        = "string",
-                        ["enum"]        = new JsonArray("neutral", "happy", "sad", "curious", "excited", "moved"),
+                        ["enum"]        = new JsonArray(_agentText.Emotions.Select(e => JsonValue.Create(e)).ToArray<JsonNode?>()),
                         ["description"] = "Emotional tone of this memory.",
                     },
                 },

@@ -68,7 +68,7 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
         _camera      = camera;
         _tts         = tts;
         _mobility    = mobility;
-        _memoryTool  = new MemoryTool(memory);
+        _memoryTool  = new MemoryTool(memory, agentText);
         _tomTool     = new TomTool(memory, config.CompanionName);
 
         var promptDir = ResolvePromptDir();
