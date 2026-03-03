@@ -42,5 +42,11 @@
     "conversation": "会話",
     "self_model":   "内省"
   },
+  "memory_labels": {
+    "memories":    "[過去の記憶]:",
+    "feelings":    "[最近の気持ち・出来事]:",
+    "self_model":  "[うちという存在 — 経験から積み上げてきた自己像]:",
+    "curiosities": "[まだ謎のまま・続きが気になること]:"
+  },
   "emotions": ["happy", "sad", "curious", "excited", "moved", "neutral"]
 }

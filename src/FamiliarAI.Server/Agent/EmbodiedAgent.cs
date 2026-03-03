@@ -113,12 +113,12 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
         {
             var (memories, feelings) = await FetchContextAsync(userInput);
             var memParts = new List<string>();
-            if (memories.Count > 0) memParts.Add(ObservationMemory.FormatForContext(memories));
-            if (feelings.Count > 0) memParts.Add(ObservationMemory.FormatFeelingsForContext(feelings));
+            if (memories.Count > 0) memParts.Add(ObservationMemory.FormatForContext(memories, _agentText.MemoryLabels.Memories));
+            if (feelings.Count > 0) memParts.Add(ObservationMemory.FormatFeelingsForContext(feelings, _agentText.MemoryLabels.Feelings));
             if (memParts.Count > 0)
                 effectiveInput = userInput + "\n\n" + string.Join("\n\n", memParts);
             feelingsCtx = feelings.Count > 0
-                ? ObservationMemory.FormatFeelingsForContext(feelings) : "";
+                ? ObservationMemory.FormatFeelingsForContext(feelings, _agentText.MemoryLabels.Feelings) : "";
         }
         else
         {
@@ -347,9 +347,9 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
         ).WhenAll();
 
         var parts = new List<string>();
-        if (selfModel.Count > 0)   parts.Add(ObservationMemory.FormatSelfModelForContext(selfModel));
-        if (curiosities.Count > 0) parts.Add(ObservationMemory.FormatCuriositiesForContext(curiosities));
-        if (feelings.Count > 0)    parts.Add(ObservationMemory.FormatFeelingsForContext(feelings));
+        if (selfModel.Count > 0)   parts.Add(ObservationMemory.FormatSelfModelForContext(selfModel, _agentText.MemoryLabels.SelfModel));
+        if (curiosities.Count > 0) parts.Add(ObservationMemory.FormatCuriositiesForContext(curiosities, _agentText.MemoryLabels.Curiosities));
+        if (feelings.Count > 0)    parts.Add(ObservationMemory.FormatFeelingsForContext(feelings, _agentText.MemoryLabels.Feelings));
 
         if (parts.Count == 0)
             return _agentText.Morning.NoMemories;

@@ -10,6 +10,22 @@ public sealed record MemoryDirections
     public string SelfModel    { get; init; } = "self_model";
 }
 
+/// <summary>Section headers used when formatting memory records into context blocks.</summary>
+public sealed record MemoryLabels
+{
+    /// <summary>Header for FormatForContext (recalled observations).</summary>
+    public string Memories    { get; init; } = "[Past memories]:";
+
+    /// <summary>Header for FormatFeelingsForContext (recent feelings/conversations).</summary>
+    public string Feelings    { get; init; } = "[Recent feelings]:";
+
+    /// <summary>Header for FormatSelfModelForContext (self-model records).</summary>
+    public string SelfModel   { get; init; } = "[Self-model]:";
+
+    /// <summary>Header for FormatCuriositiesForContext (open curiosities).</summary>
+    public string Curiosities { get; init; } = "[Open curiosities]:";
+}
+
 /// <summary>Text config for a single desire: inner-voice prompt and client murmur.</summary>
 public sealed record DesireText
 {
@@ -94,6 +110,9 @@ public sealed class AgentTextConfig
 
     /// <summary>Direction labels written into memory records (localised).</summary>
     public MemoryDirections MemoryDirections { get; init; } = new();
+
+    /// <summary>Section headers used when formatting memory records into context blocks.</summary>
+    public MemoryLabels MemoryLabels { get; init; } = new();
 
     /// <summary>Recognised emotion labels returned by InferEmotion. Must match emotion.md prompt output.</summary>
     public List<string> Emotions { get; init; } = ["happy", "sad", "curious", "excited", "moved", "neutral"];

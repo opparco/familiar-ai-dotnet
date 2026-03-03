@@ -251,10 +251,10 @@ public sealed class ObservationMemory : IDisposable
     // Context formatting  (mirrors Python format_* methods)
     // ---------------------------------------------------------------
 
-    public static string FormatForContext(IReadOnlyList<MemoryRecord> memories)
+    public static string FormatForContext(IReadOnlyList<MemoryRecord> memories, string header)
     {
         if (memories.Count == 0) return "";
-        var lines = new List<string> { "[過去の記憶]:" };
+        var lines = new List<string> { header };
         foreach (var m in memories)
         {
             var score   = m.Score.HasValue ? $" (類似度:{m.Score:F2})" : "";
@@ -264,10 +264,10 @@ public sealed class ObservationMemory : IDisposable
         return string.Join('\n', lines);
     }
 
-    public static string FormatFeelingsForContext(IReadOnlyList<MemoryRecord> feelings)
+    public static string FormatFeelingsForContext(IReadOnlyList<MemoryRecord> feelings, string header)
     {
         if (feelings.Count == 0) return "";
-        var lines = new List<string> { "[最近の気持ち・出来事]:" };
+        var lines = new List<string> { header };
         foreach (var f in feelings)
         {
             var emotion = f.Emotion is not ("neutral" or "") ? $"[{f.Emotion}] " : "";
@@ -276,19 +276,19 @@ public sealed class ObservationMemory : IDisposable
         return string.Join('\n', lines);
     }
 
-    public static string FormatSelfModelForContext(IReadOnlyList<MemoryRecord> selfModel)
+    public static string FormatSelfModelForContext(IReadOnlyList<MemoryRecord> selfModel, string header)
     {
         if (selfModel.Count == 0) return "";
-        var lines = new List<string> { "[うちという存在 — 経験から積み上げてきた自己像]:" };
+        var lines = new List<string> { header };
         foreach (var m in selfModel)
             lines.Add($"- {m.Content[..Math.Min(120, m.Content.Length)]}");
         return string.Join('\n', lines);
     }
 
-    public static string FormatCuriositiesForContext(IReadOnlyList<MemoryRecord> curiosities)
+    public static string FormatCuriositiesForContext(IReadOnlyList<MemoryRecord> curiosities, string header)
     {
         if (curiosities.Count == 0) return "";
-        var lines = new List<string> { "[まだ謎のまま・続きが気になること]:" };
+        var lines = new List<string> { header };
         foreach (var c in curiosities)
             lines.Add($"- {c.Date} {c.Time}: {c.Content[..Math.Min(120, c.Content.Length)]}");
         return string.Join('\n', lines);
