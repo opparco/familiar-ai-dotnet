@@ -33,7 +33,8 @@ var voicevoxSpk    = int.TryParse(Environment.GetEnvironmentVariable("VOICEVOX_S
 var elevenApiKey   = Environment.GetEnvironmentVariable("ELEVENLABS_API_KEY")   ?? "";
 var elevenVoiceId  = Environment.GetEnvironmentVariable("ELEVENLABS_VOICE_ID")  ?? "";
 
-var config = new AgentConfig(agentName, companionName, apiKey, platform, model);
+var config        = new AgentConfig(agentName, companionName, apiKey, platform, model);
+var agentTextConfig = AgentTextConfig.LoadDefault();
 
 // ---- build ----
 var builder = WebApplication.CreateBuilder(args);
@@ -114,9 +115,10 @@ builder.Services.AddSingleton<IFamiliarAgent>(sp =>
           .LogInformation("Mobility configured: device={DeviceId} region={Region}", tuyaDeviceId, tuyaRegion);
     }
 
-    return new EmbodiedAgent(config, backend, memory, sp.GetRequiredService<ILogger<EmbodiedAgent>>(), camera, tts, mobility);
+    return new EmbodiedAgent(config, agentTextConfig, backend, memory, sp.GetRequiredService<ILogger<EmbodiedAgent>>(), camera, tts, mobility);
 });
 
+builder.Services.AddSingleton(agentTextConfig);
 builder.Services.AddSingleton<ChatLogger>();
 builder.Services.AddSingleton<DesireSystem>();
 builder.Services.AddSingleton<FamiliarServer>();

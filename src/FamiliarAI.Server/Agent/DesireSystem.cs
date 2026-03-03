@@ -56,8 +56,11 @@ public sealed class DesireSystem
     /// </summary>
     public string? CuriosityTarget { get; set; }
 
-    public DesireSystem(ILogger<DesireSystem> logger, string? statePath = null)
+    private readonly AgentTextConfig _textConfig;
+
+    public DesireSystem(AgentTextConfig textConfig, ILogger<DesireSystem> logger, string? statePath = null)
     {
+        _textConfig = textConfig;
         _statePath  = statePath ?? DefaultStatePath;
         _logger     = logger;
         _desires    = new Dictionary<string, float>(DefaultDesires);
@@ -164,29 +167,20 @@ public sealed class DesireSystem
 
         var (name, _) = result.Value;
 
-        // Use curiosity target for look_around / explore when available
-        if (name is "look_around" or "explore" && CuriosityTarget is not null)
-            return $"さっき気になったことがある。{CuriosityTarget}をもっとよく見て。カメラを向けて確認して。";
+        if (!_textConfig.Desires.TryGetValue(name, out var dt)) return null;
 
-        return name switch
-        {
-            "look_around" =>
-                "（内部衝動）なんか外が気になってきた。" +
-                "see()で実際に見て、目に入ったものをぽつっとひと言つぶやく。" +
-                "look()だけじゃなく必ずsee()を呼ぶこと。",
+        // Use curiosity-target variant when available
+        if (CuriosityTarget is not null && dt.CuriosityPrompt is not null)
+            return dt.CuriosityPrompt.Replace("{target}", CuriosityTarget);
 
-            "explore" =>
-                "（内部衝動）なんか体を動かしたい気分。walk()で少し移動してから、see()で確認してみよう。",
-
-            "greet_companion" =>
-                "（内部衝動）誰かいる気配がする。声かけてみよかな。",
-
-            "rest" =>
-                "（内部衝動）ちょっとひと休み。",
-
-            _ => null,
-        };
+        return dt.Prompt;
     }
+
+    /// <summary>Returns the client-facing murmur for the given desire name.</summary>
+    public string GetMurmur(string desireName) =>
+        _textConfig.Desires.TryGetValue(desireName, out var dt)
+            ? dt.Murmur
+            : _textConfig.MurmurDefault;
 
     /// <summary>Current desire levels snapshot (for diagnostics).</summary>
     public IReadOnlyDictionary<string, float> Levels =>

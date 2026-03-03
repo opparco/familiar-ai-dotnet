@@ -83,7 +83,7 @@ public sealed class AgentLoopService : BackgroundService
             var name     = dominant?.name ?? "unknown";
 
             // Echo murmur to stdout/log and broadcast to clients
-            var murmur = GetMurmur(name);
+            var murmur = _desires.GetMurmur(name);
             _chatLogger.LogStatus(murmur);
             await _server.BroadcastAsync("status", new StatusData(murmur));
 
@@ -108,16 +108,4 @@ public sealed class AgentLoopService : BackgroundService
         _logger.LogInformation("Agent loop stopped");
     }
 
-    // ---------------------------------------------------------------
-    // Murmur strings (shown to clients before the desire turn runs)
-    // ---------------------------------------------------------------
-
-    private static string GetMurmur(string desireName) => desireName switch
-    {
-        "look_around"      => "なんか外が気になってきた…",
-        "explore"          => "ちょっと動きたくなってきたな…",
-        "greet_companion"  => "誰かいるかな…",
-        "rest"             => "少し休憩しよかな…",
-        _                  => "ちょっと気になることがあって…",
-    };
 }

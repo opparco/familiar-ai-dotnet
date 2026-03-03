@@ -38,6 +38,7 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
 
     // Data-driven config (loaded once at startup)
     private readonly InteroceptionConfig _interoceptionConfig;
+    private readonly AgentTextConfig _agentText;
 
     private readonly List<JsonObject> _history = [];
     private readonly object _historyLock = new();
@@ -50,6 +51,7 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
 
     public EmbodiedAgent(
         AgentConfig config,
+        AgentTextConfig agentText,
         ILlmBackend backend,
         ObservationMemory memory,
         ILogger<EmbodiedAgent> logger,
@@ -59,6 +61,7 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
     {
         AgentName    = config.AgentName;
         CompanionName = config.CompanionName;
+        _agentText   = agentText;
         _backend     = backend;
         _memory      = memory;
         _logger      = logger;
@@ -119,7 +122,7 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
         }
         else
         {
-            effectiveInput = "（静かに、内なる声に従って行動する。）";
+            effectiveInput = _agentText.InnerVoice.DesireTurnInput;
         }
 
         // ── Append user message ────────────────────────────────────────
@@ -232,15 +235,13 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
                 // Nudge: 2+ tool calls without say()
                 if (nonSayStreak >= 2 && !sayUsed)
                 {
-                    var nudge = _backend.MakeUserMessage(
-                        "REMINDER: Writing text is silent. You MUST call say() to be heard. " +
-                        "Call say() NOW. Keep it to 1-2 sentences.");
+                    var nudge = _backend.MakeUserMessage(_agentText.Nudges.SilentReminder);
                     lock (_historyLock) { _history.Add(nudge); snapshot = [.. _history]; }
                     nonSayStreak = 0;
                 }
                 else if (sayUsed && nonSayStreak >= 2)
                 {
-                    var nudge = _backend.MakeUserMessage("You already spoke. Stop exploring and end your turn now.");
+                    var nudge = _backend.MakeUserMessage(_agentText.Nudges.StopExploring);
                     lock (_historyLock) { _history.Add(nudge); snapshot = [.. _history]; }
                     nonSayStreak = 0;
                 }
@@ -254,8 +255,7 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
 
         // Max iterations — force final response
         _logger.LogWarning("Reached max iterations ({Max}). Forcing final response.", MaxIterations);
-        var forceMsg = _backend.MakeUserMessage(
-            "Please summarize what you found and provide your final answer now.");
+        var forceMsg = _backend.MakeUserMessage(_agentText.Nudges.ForceEnd);
         lock (_historyLock) { _history.Add(forceMsg); snapshot = [.. _history]; }
 
         var (forceResult, _) = await _backend.StreamTurnAsync(
@@ -316,9 +316,9 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
         if (!string.IsNullOrEmpty(morningCtx))    parts.Add(morningCtx);
         else if (!string.IsNullOrEmpty(feelingsCtx)) parts.Add(feelingsCtx);
         if (!string.IsNullOrEmpty(innerVoice))
-            parts.Add($"[内なる声 — あなた自身の衝動]\n{innerVoice}\n（これはあなた自身の内側から来ている。）");
+            parts.Add(_agentText.InnerVoice.Header + "\n" + innerVoice);
         if (!string.IsNullOrEmpty(planCtx))
-            parts.Add("[このターンのアクションプラン — 正当な理由がない限り従うこと]\n" + planCtx);
+            parts.Add(_agentText.PlanHeader + "\n" + planCtx);
 
         return string.Join("\n\n---\n\n", parts);
     }
@@ -352,9 +352,9 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
         if (feelings.Count > 0)    parts.Add(ObservationMemory.FormatFeelingsForContext(feelings));
 
         if (parts.Count == 0)
-            return "（まだ記憶がない。今日が最初の日だ。）";
+            return _agentText.Morning.NoMemories;
 
-        return "[昨日までの記憶から今日の自分を立ち上げる]:\n\n" + string.Join("\n\n", parts);
+        return _agentText.Morning.Header + "\n\n" + string.Join("\n\n", parts);
     }
 
     // ---------------------------------------------------------------
