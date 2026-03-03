@@ -36,6 +36,9 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
     private readonly string _tapeBlockedTemplate;
     private readonly string _tapeReplanTemplate;
 
+    // Data-driven config (loaded once at startup)
+    private readonly InteroceptionConfig _interoceptionConfig;
+
     private readonly List<JsonObject> _history = [];
     private readonly object _historyLock = new();
 
@@ -74,7 +77,11 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
         _tapeBlockedTemplate= File.ReadAllText(Path.Combine(promptDir, "tape_blocked.md"));
         _tapeReplanTemplate = File.ReadAllText(Path.Combine(promptDir, "tape_replan.md"));
 
-        _logger.LogInformation("EmbodiedAgent ready — prompts from {Dir}", promptDir);
+        var dataDir = ResolveDataDir();
+        _interoceptionConfig = InteroceptionConfig.Load(dataDir);
+
+        _logger.LogInformation("EmbodiedAgent ready — prompts from {PromptDir}, data from {DataDir}",
+            promptDir, dataDir);
     }
 
     // ---------------------------------------------------------------
@@ -299,12 +306,12 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
         string planCtx)
     {
         var me      = LoadMeMd();
+        var system = _systemTemplate.Replace("{max_steps}", MaxIterations.ToString());
         var intero  = BuildInteroception();
-        var basePmt = _systemTemplate.Replace("{max_steps}", MaxIterations.ToString());
 
         var parts = new List<string>();
         if (!string.IsNullOrEmpty(me)) parts.Add(me);
-        parts.Add(basePmt);
+        parts.Add(system);
         parts.Add(intero);
         if (!string.IsNullOrEmpty(morningCtx))    parts.Add(morningCtx);
         else if (!string.IsNullOrEmpty(feelingsCtx)) parts.Add(feelingsCtx);
@@ -322,33 +329,9 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
 
     private string BuildInteroception()
     {
-        var now      = DateTime.Now;
-        var uptime   = DateTime.Now - _startedAt;
-
-        var timeFeel = now.Hour switch
-        {
-            >= 5  and < 9  => "Morning light. Something feels fresh and a little quiet.",
-            >= 9  and < 12 => "Mid-morning. Alert and curious.",
-            >= 12 and < 14 => "Around noon. A little slow, like after lunch.",
-            >= 14 and < 18 => "Afternoon. Steady. Things feel familiar.",
-            >= 18 and < 21 => "Evening. The day is winding down. A bit nostalgic.",
-            >= 21          => "Late night. Quieter. More introspective.",
-            _              => "Deep night. Very still.",
-        };
-        var uptimeFeel = uptime.TotalMinutes switch
-        {
-            < 3  => "Just woke up. Still orienting.",
-            < 15 => "Settled in now.",
-            _    => "Been here a while. Comfortable.",
-        };
-        var socialFeel = _turnCount switch
-        {
-            0 => "Nobody's talked to me yet today.",
-            1 or 2 => "Good to have some company.",
-            _ => "We've been talking a lot. That feels nice.",
-        };
-
-        return $"[How you feel right now, privately — do NOT mention this directly]\n{timeFeel} {uptimeFeel} {socialFeel}";
+        var now    = DateTime.Now;
+        var uptime = now - _startedAt;
+        return _interoceptionConfig.Resolve(now.Hour, uptime.TotalMinutes, _turnCount);
     }
 
     // ---------------------------------------------------------------
@@ -524,20 +507,21 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
         return "";
     }
 
-    private static string ResolvePromptDir()
+    private static string ResolveDir(string name)
     {
-        // 1. Relative to executable (published / dotnet run)
         var exeDir = Path.GetDirectoryName(Environment.ProcessPath) ?? ".";
-        var candidate = Path.Combine(exeDir, "prompts");
+        var candidate = Path.Combine(exeDir, name);
         if (Directory.Exists(candidate)) return candidate;
 
-        // 2. Working directory (dotnet run from project dir)
-        candidate = Path.Combine(Directory.GetCurrentDirectory(), "prompts");
+        candidate = Path.Combine(Directory.GetCurrentDirectory(), name);
         if (Directory.Exists(candidate)) return candidate;
 
         throw new DirectoryNotFoundException(
-            "prompts/ directory not found. Expected alongside the executable.");
+            $"{name}/ directory not found. Expected alongside the executable.");
     }
+
+    private static string ResolvePromptDir() => ResolveDir("prompts");
+    private static string ResolveDataDir()   => ResolveDir("data");
 
     public void Dispose()
     {
