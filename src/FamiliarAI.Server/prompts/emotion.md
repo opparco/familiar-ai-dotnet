@@ -1,5 +1,5 @@
 Read this text and pick the single best emotion label:
-happy / sad / curious / excited / moved / neutral
+{emotions}
 
 Text:
 {text}
