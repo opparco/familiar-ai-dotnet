@@ -149,7 +149,7 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
         bool cameraUsed   = false;
         bool sayUsed      = false;
         int  nonSayStreak = 0;
-        string finalText  = "(no response)";
+        string finalText  = _agentText.NoResponse;
 
         for (int i = 0; i < MaxIterations; i++)
         {
@@ -164,7 +164,7 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
             if (result.StopReason == StopReason.EndTurn)
             {
                 lock (_historyLock) { _history.Add(rawAssistant); snapshot = [.. _history]; }
-                finalText = string.IsNullOrEmpty(result.Text) ? "(no response)" : result.Text;
+                finalText = string.IsNullOrEmpty(result.Text) ? _agentText.NoResponse : result.Text;
 
                 // Post-turn memory saves (fire and forget — don't block response)
                 _ = SavePostTurnMemoriesAsync(userInput, finalText, cameraUsed);
@@ -206,7 +206,7 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
                             var replan = await GenerateReplanAsync(planCtx, tc.Name, inputSummary, toolText, ct);
                             if (!string.IsNullOrEmpty(replan))
                             {
-                                toolText = $"{toolText}\n\n[ADAPTIVE REPLAN] {replan}";
+                                toolText = $"{toolText}\n\n{_agentText.AdaptiveReplanLabel} {replan}";
                                 _logger.LogInformation("TAPE replan: {Replan}", replan[..Math.Min(80, replan.Length)]);
                             }
                         }
@@ -365,15 +365,15 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
     {
         try
         {
-            if (string.IsNullOrEmpty(agentText) || agentText == "(no response)") return;
+            if (string.IsNullOrEmpty(agentText) || agentText == _agentText.NoResponse) return;
 
             if (cameraUsed)
                 await _memory.SaveAsync(agentText[..Math.Min(500, agentText.Length)],
-                    direction: "観察", kind: "observation");
+                    direction: _agentText.MemoryDirections.Observation, kind: "observation");
 
             var emotion = await InferEmotionAsync(agentText);
             var summary = await SummarizeExchangeAsync(userInput, agentText);
-            await _memory.SaveAsync(summary, direction: "会話", kind: "conversation", emotion: emotion);
+            await _memory.SaveAsync(summary, direction: _agentText.MemoryDirections.Conversation, kind: "conversation", emotion: emotion);
 
             if (emotion != "neutral")
                 await UpdateSelfModelAsync(agentText, emotion);
@@ -392,14 +392,13 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
     {
         var prompt = _emotionTemplate.Replace("{text}", text[..Math.Min(400, text.Length)]);
         var label  = (await _backend.CompleteAsync(prompt, maxTokens: 10)).Trim().ToLower();
-        return label is "happy" or "sad" or "curious" or "excited" or "moved" or "neutral"
-            ? label : "neutral";
+        return _agentText.Emotions.Contains(label) ? label : "neutral";
     }
 
     private async Task<string> SummarizeExchangeAsync(string userInput, string agentText)
     {
         var prompt = _summaryTemplate
-            .Replace("{lang}", "日本語")
+            .Replace("{lang}", _agentText.LangName)
             .Replace("{user}", userInput[..Math.Min(200, userInput.Length)])
             .Replace("{agent}", agentText[..Math.Min(200, agentText.Length)]);
         return (await _backend.CompleteAsync(prompt, maxTokens: 80)).Trim()
@@ -414,7 +413,7 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
             var insight = (await _backend.CompleteAsync(prompt, maxTokens: 80)).Trim();
             if (!string.IsNullOrEmpty(insight) && insight.ToLower() != "nothing")
             {
-                await _memory.SaveAsync(insight, direction: "内省", kind: "self_model", emotion: emotion);
+                await _memory.SaveAsync(insight, direction: _agentText.MemoryDirections.SelfModel, kind: "self_model", emotion: emotion);
                 _logger.LogInformation("Self-model updated: {Insight}", insight[..Math.Min(60, insight.Length)]);
             }
         }

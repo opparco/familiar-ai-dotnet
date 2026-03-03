@@ -2,6 +2,14 @@ using System.Text.Json;
 
 namespace FamiliarAI.Server.Agent;
 
+/// <summary>Localised labels used when writing memory records.</summary>
+public sealed record MemoryDirections
+{
+    public string Observation  { get; init; } = "observation";
+    public string Conversation { get; init; } = "conversation";
+    public string SelfModel    { get; init; } = "self_model";
+}
+
 /// <summary>Text config for a single desire: inner-voice prompt and client murmur.</summary>
 public sealed record DesireText
 {
@@ -72,6 +80,23 @@ public sealed class AgentTextConfig
 
     /// <summary>Section label placed above the TAPE plan in the system prompt. No placeholder.</summary>
     public string PlanHeader { get; init; } = "";
+
+    // ── Language-specific strings ─────────────────────────────────────────────
+
+    /// <summary>Language name injected into the {lang} placeholder of summary prompts.</summary>
+    public string LangName { get; init; } = "English";
+
+    /// <summary>Fallback text when the agent produces no output during a turn.</summary>
+    public string NoResponse { get; init; } = "(no response)";
+
+    /// <summary>Label prepended to adaptive TAPE replan text appended to a tool result.</summary>
+    public string AdaptiveReplanLabel { get; init; } = "[ADAPTIVE REPLAN]";
+
+    /// <summary>Direction labels written into memory records (localised).</summary>
+    public MemoryDirections MemoryDirections { get; init; } = new();
+
+    /// <summary>Recognised emotion labels returned by InferEmotion. Must match emotion.md prompt output.</summary>
+    public List<string> Emotions { get; init; } = ["happy", "sad", "curious", "excited", "moved", "neutral"];
 
     private static readonly JsonSerializerOptions JsonOpts =
         new() { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower };

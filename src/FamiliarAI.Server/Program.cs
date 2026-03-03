@@ -33,7 +33,7 @@ var voicevoxSpk    = int.TryParse(Environment.GetEnvironmentVariable("VOICEVOX_S
 var elevenApiKey   = Environment.GetEnvironmentVariable("ELEVENLABS_API_KEY")   ?? "";
 var elevenVoiceId  = Environment.GetEnvironmentVariable("ELEVENLABS_VOICE_ID")  ?? "";
 
-var config        = new AgentConfig(agentName, companionName, apiKey, platform, model);
+var config          = new AgentConfig(agentName, companionName, apiKey, platform, model);
 var agentTextConfig = AgentTextConfig.LoadDefault();
 
 // ---- build ----

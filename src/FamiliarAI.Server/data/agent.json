@@ -33,5 +33,14 @@
     "no_memories": "（まだ記憶がない。今日が最初の日だ。）",
     "header": "[昨日までの記憶から今日の自分を立ち上げる]:"
   },
-  "plan_header": "[このターンのアクションプラン — 正当な理由がない限り従うこと]"
+  "plan_header": "[このターンのアクションプラン — 正当な理由がない限り従うこと]",
+  "lang_name": "日本語",
+  "no_response": "(no response)",
+  "adaptive_replan_label": "[ADAPTIVE REPLAN]",
+  "memory_directions": {
+    "observation":  "観察",
+    "conversation": "会話",
+    "self_model":   "内省"
+  },
+  "emotions": ["happy", "sad", "curious", "excited", "moved", "neutral"]
 }
