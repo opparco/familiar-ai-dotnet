@@ -68,7 +68,7 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
         _camera      = camera;
         _tts         = tts;
         _mobility    = mobility;
-        _memoryTool  = new MemoryTool(memory);
+        _memoryTool  = new MemoryTool(memory, agentText);
         _tomTool     = new TomTool(memory, config.CompanionName);
 
         var promptDir = ResolvePromptDir();
@@ -390,7 +390,9 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
 
     private async Task<string> InferEmotionAsync(string text)
     {
-        var prompt = _emotionTemplate.Replace("{text}", text[..Math.Min(400, text.Length)]);
+        var prompt = _emotionTemplate
+            .Replace("{emotions}", string.Join(" / ", _agentText.Emotions))
+            .Replace("{text}", text[..Math.Min(400, text.Length)]);
         var label  = (await _backend.CompleteAsync(prompt, maxTokens: 10)).Trim().ToLower();
         return _agentText.Emotions.Contains(label) ? label : "neutral";
     }
