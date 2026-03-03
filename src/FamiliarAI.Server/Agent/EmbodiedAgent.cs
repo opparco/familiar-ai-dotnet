@@ -206,7 +206,7 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
                             var replan = await GenerateReplanAsync(planCtx, tc.Name, inputSummary, toolText, ct);
                             if (!string.IsNullOrEmpty(replan))
                             {
-                                toolText = $"{toolText}\n\n{_agentText.AdaptiveReplanLabel} {replan}";
+                                toolText = $"{toolText}\n\n{_agentText.AdaptiveReplanLabel}{replan}";
                                 _logger.LogInformation("TAPE replan: {Replan}", replan[..Math.Min(80, replan.Length)]);
                             }
                         }

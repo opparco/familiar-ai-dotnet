@@ -106,7 +106,7 @@ public sealed class AgentTextConfig
     public string NoResponse { get; init; } = "(no response)";
 
     /// <summary>Label prepended to adaptive TAPE replan text appended to a tool result.</summary>
-    public string AdaptiveReplanLabel { get; init; } = "[ADAPTIVE REPLAN]";
+    public string AdaptiveReplanLabel { get; init; } = "[ADAPTIVE REPLAN] ";
 
     /// <summary>Direction labels written into memory records (localised).</summary>
     public MemoryDirections MemoryDirections { get; init; } = new();
