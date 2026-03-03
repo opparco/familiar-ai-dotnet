@@ -400,7 +400,7 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
     private async Task<string> SummarizeExchangeAsync(string userInput, string agentText)
     {
         var prompt = _summaryTemplate
-            .Replace("{lang}", _agentText.LangName)
+            .Replace("{lang}", _agentText.SummaryLang)
             .Replace("{user}", userInput[..Math.Min(200, userInput.Length)])
             .Replace("{agent}", agentText[..Math.Min(200, agentText.Length)]);
         return (await _backend.CompleteAsync(prompt, maxTokens: 80)).Trim()

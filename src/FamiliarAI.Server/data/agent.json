@@ -34,7 +34,6 @@
     "header": "[昨日までの記憶から今日の自分を立ち上げる]:"
   },
   "plan_header": "[このターンのアクションプラン — 正当な理由がない限り従うこと]:",
-  "lang_name": "日本語",
   "no_response": "(no response)",
   "adaptive_replan_label": "[ADAPTIVE REPLAN] ",
   "memory_directions": {
@@ -48,5 +47,6 @@
     "self_model":  "[うちという存在 — 経験から積み上げてきた自己像]:",
     "curiosities": "[まだ謎のまま・続きが気になること]:"
   },
-  "emotions": ["happy", "sad", "curious", "excited", "moved", "neutral"]
+  "emotions": ["happy", "sad", "curious", "excited", "moved", "neutral"],
+  "summary_lang": "日本語"
 }

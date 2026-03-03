@@ -97,11 +97,6 @@ public sealed class AgentTextConfig
     /// <summary>Section label placed above the TAPE plan in the system prompt. No placeholder.</summary>
     public string PlanHeader { get; init; } = "";
 
-    // ── Language-specific strings ─────────────────────────────────────────────
-
-    /// <summary>Language name injected into the {lang} placeholder of summary prompts.</summary>
-    public string LangName { get; init; } = "English";
-
     /// <summary>Fallback text when the agent produces no output during a turn.</summary>
     public string NoResponse { get; init; } = "(no response)";
 
@@ -116,6 +111,9 @@ public sealed class AgentTextConfig
 
     /// <summary>Recognised emotion labels returned by InferEmotion. Must match emotion.md prompt output.</summary>
     public List<string> Emotions { get; init; } = ["happy", "sad", "curious", "excited", "moved", "neutral"];
+
+    /// <summary>Language name injected into the {lang} placeholder of summary prompts.</summary>
+    public string SummaryLang { get; init; } = "English";
 
     private static readonly JsonSerializerOptions JsonOpts =
         new() { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower };
