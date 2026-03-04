@@ -22,14 +22,17 @@ public sealed class InteroceptionConfig
     public string Template { get; init; } =
         "[How you feel right now, privately — do NOT mention this directly]\n{time} {uptime} {social}";
 
-    private static readonly JsonSerializerOptions _jsonOpts =
-        new() { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower };
+    private static readonly JsonSerializerOptions _jsonOpts = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
+        ReadCommentHandling = JsonCommentHandling.Skip,
+    };
 
     public static InteroceptionConfig Load(string dataDir)
     {
-        var path = Path.Combine(dataDir, "interoception.json");
+        var path = Path.Combine(dataDir, "interoception.jsonc");
         return JsonSerializer.Deserialize<InteroceptionConfig>(File.ReadAllText(path), _jsonOpts)
-            ?? throw new InvalidDataException("interoception.json deserialised to null");
+            ?? throw new InvalidDataException("interoception.jsonc deserialised to null");
     }
 
     /// <summary>Returns the interoception string for the given signals.</summary>

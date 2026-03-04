@@ -15,9 +15,12 @@
     <PackageReference Include="Microsoft.ML.Tokenizers" Version="2.0.0" />
   </ItemGroup>
 
-  <!-- Copy prompt templates to output directory -->
+  <!-- Copy prompt templates and data config to output directory -->
   <ItemGroup>
     <Content Include="prompts\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="data\**\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
