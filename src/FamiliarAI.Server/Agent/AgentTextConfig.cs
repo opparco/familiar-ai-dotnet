@@ -115,12 +115,15 @@ public sealed class AgentTextConfig
     /// <summary>Language name injected into the {lang} placeholder of summary prompts.</summary>
     public string SummaryLang { get; init; } = "English";
 
-    private static readonly JsonSerializerOptions JsonOpts =
-        new() { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower };
+    private static readonly JsonSerializerOptions JsonOpts = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
+        ReadCommentHandling = JsonCommentHandling.Skip,
+    };
 
     public static AgentTextConfig Load(string dataDir)
     {
-        var path = Path.Combine(dataDir, "agent.json");
+        var path = Path.Combine(dataDir, "agent.jsonc");
         return JsonSerializer.Deserialize<AgentTextConfig>(File.ReadAllText(path), JsonOpts)
             ?? throw new InvalidDataException("agent.json deserialised to null");
     }

@@ -1,0 +1,87 @@
+{
+  // ── Memory formatting ─────────────────────────────────────────────────────
+  // Section headers injected into context blocks appended to user messages.
+  "memory_labels": {
+    "memories":    "[過去の記憶]:",
+    "feelings":    "[最近の気持ち・出来事]:",
+    "self_model":  "[うちという存在 — 経験から積み上げてきた自己像]:",
+    "curiosities": "[まだ謎のまま・続きが気になること]:"
+  },
+
+  // ── Inner voice / desire turns ────────────────────────────────────────────
+  "inner_voice": {
+    // Substituted as user message on desire turns (no real user input).
+    "desire_turn_input": "（静かに、内なる声に従って行動する。）",
+    // Label placed above the desire prompt block in the system prompt.
+    "header": "[内なる声 — あなた自身の衝動]:"
+  },
+
+  // ── ReAct loop ────────────────────────────────────────────────────────────
+  // Fallback when the agent produces no output during a turn.
+  "no_response": "(no response)",
+
+  // Prepended to adaptive TAPE replan text appended to a tool result.
+  "adaptive_replan_label": "[ADAPTIVE REPLAN] ",
+
+  // Nudge messages injected into the loop to keep the agent speaking.
+  "nudges": {
+    // Injected after 2+ tool calls without say().
+    "silent_reminder": "REMINDER: Writing text is silent. You MUST call say() to be heard. Call say() NOW. Keep it to 1-2 sentences.",
+    // Injected when say() was already called but the agent keeps using tools.
+    "stop_exploring": "You already spoke. Stop exploring and end your turn now.",
+    // Injected when max iterations are reached to force a final response.
+    "force_end": "Please summarize what you found and provide your final answer now."
+  },
+
+  // Label placed above the TAPE plan block in the system prompt.
+  "plan_header": "[このターンのアクションプラン — 正当な理由がない限り従うこと]:",
+
+  // ── Morning reconstruction (first turn only) ──────────────────────────────
+  "morning": {
+    // Returned as the full morning context when no memories exist yet.
+    "no_memories": "（まだ記憶がない。今日が最初の日だ。）",
+    // Label placed above the morning reconstruction block.
+    "header": "[昨日までの記憶から今日の自分を立ち上げる]:"
+  },
+
+  // ── Post-turn memory saves ────────────────────────────────────────────────
+  // Direction labels written into memory DB records (localised).
+  "memory_directions": {
+    "observation":  "観察",
+    "conversation": "会話",
+    "self_model":   "内省"
+  },
+
+  // Recognised emotion labels; must match the output of emotion.md.
+  "emotions": ["happy", "sad", "curious", "excited", "moved", "neutral"],
+
+  // Language injected into the {lang} placeholder of summary.md.
+  "summary_lang": "日本語",
+
+  // ── Desire system (DesireSystem.cs) ───────────────────────────────────────
+  // Per-desire inner-voice prompts and client murmurs, keyed by desire name.
+  "desires": {
+    "look_around": {
+      "prompt": "（内部衝動）なんか外が気になってきた。see()で実際に見て、目に入ったものをぽつっとひと言つぶやく。look()だけじゃなく必ずsee()を呼ぶこと。",
+      // Variant used when a curiosity target is set ({target} placeholder).
+      "curiosity_prompt": "さっき気になったことがある。{target}をもっとよく見て。カメラを向けて確認して。",
+      "murmur": "なんか外が気になってきた…"
+    },
+    "explore": {
+      "prompt": "（内部衝動）なんか体を動かしたい気分。walk()で少し移動してから、see()で確認してみよう。",
+      "curiosity_prompt": "さっき気になったことがある。{target}をもっとよく見て。カメラを向けて確認して。",
+      "murmur": "ちょっと動きたくなってきたな…"
+    },
+    "greet_companion": {
+      "prompt": "（内部衝動）誰かいる気配がする。声かけてみよかな。",
+      "murmur": "誰かいるかな…"
+    },
+    "rest": {
+      "prompt": "（内部衝動）ちょっとひと休み。",
+      "murmur": "少し休憩しよかな…"
+    }
+  },
+
+  // Fallback murmur broadcast to clients when a desire has no murmur defined.
+  "murmur_default": "ちょっと気になることがあって…"
+}
