@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -78,10 +77,11 @@ public sealed class AnthropicBackend : ILlmBackend, IDisposable
             body["tools"] = toolsArr;
         }
 
-        _logger.LogDebug("Anthropic request: {Body}", body.ToJsonString());
+        var bodyJson = body.ToJsonString();
+        _logger.LogDebug("Anthropic request: {Body}", bodyJson);
 
         using var request = new HttpRequestMessage(HttpMethod.Post, "v1/messages");
-        request.Content = new StringContent(body.ToJsonString(), Encoding.UTF8, "application/json");
+        request.Content = new StringContent(bodyJson, Encoding.UTF8, "application/json");
 
         using var response = await _http.SendAsync(
             request, HttpCompletionOption.ResponseHeadersRead, ct);
@@ -163,29 +163,30 @@ public sealed class AnthropicBackend : ILlmBackend, IDisposable
         }
 
         // ── Build TurnResult ───────────────────────────────────────────
-        var fullText = string.Concat(textByIndex.Values.Select(sb => sb.ToString()));
+        // Build text strings once; reuse for both fullText and rawAssistant content blocks.
+        var textStrings = textByIndex.Values.Select(sb => sb.ToString()).ToList();
+        var fullText = string.Concat(textStrings);
 
+        // Parse tool inputs once; reuse for both toolCalls list and rawAssistant content blocks.
         var toolCalls = new List<ToolCall>();
+        var toolUseBlocks = new List<(ToolUseAccum Tua, JsonObject Input)>();
         foreach (var tua in toolByIndex.Values)
         {
             JsonObject input;
             try { input = (JsonObject)JsonNode.Parse(tua.PartialJson)!; }
             catch { input = new JsonObject(); }
             toolCalls.Add(new ToolCall(tua.Id, tua.Name, input));
+            toolUseBlocks.Add((tua, (JsonObject)input.DeepClone()));
         }
 
         var stop = stopReason == "tool_use" ? StopReason.ToolUse : StopReason.EndTurn;
 
         // ── Build rawAssistant in Anthropic format ─────────────────────
         var contentArr = new JsonArray();
-        foreach (var sb in textByIndex.Values)
-            if (sb.Length > 0)
-                contentArr.Add(new JsonObject { ["type"] = "text", ["text"] = sb.ToString() });
-        foreach (var (_, tua) in toolByIndex)
-        {
-            JsonObject input;
-            try { input = (JsonObject)JsonNode.Parse(tua.PartialJson)!; }
-            catch { input = new JsonObject(); }
+        foreach (var text in textStrings)
+            if (text.Length > 0)
+                contentArr.Add(new JsonObject { ["type"] = "text", ["text"] = text });
+        foreach (var (tua, input) in toolUseBlocks)
             contentArr.Add(new JsonObject
             {
                 ["type"] = "tool_use",
@@ -193,7 +194,6 @@ public sealed class AnthropicBackend : ILlmBackend, IDisposable
                 ["name"] = tua.Name,
                 ["input"] = input,
             });
-        }
 
         JsonNode content = contentArr.Count > 0
             ? contentArr
