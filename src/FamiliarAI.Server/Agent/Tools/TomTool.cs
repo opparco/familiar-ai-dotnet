@@ -19,10 +19,12 @@ public sealed class TomTool
 {
     private readonly ObservationMemory _memory;
     private readonly string _defaultPerson;
+    private readonly string _template;
 
-    public TomTool(ObservationMemory memory, string defaultPerson = "Alex")
+    public TomTool(ObservationMemory memory, string template, string defaultPerson = "Alex")
     {
         _memory = memory;
+        _template = template;
         _defaultPerson = defaultPerson;
     }
 
@@ -85,27 +87,10 @@ public sealed class TomTool
             memoryContext = $"\n## {person}に関する記憶\n" + string.Join('\n', lines);
         }
 
-        var output =
-            $"# ToM: {person}の視点に立つ\n" +
-            $"\n" +
-            $"## 状況\n" +
-            $"{situation}\n" +
-            memoryContext + "\n" +
-            $"\n" +
-            $"## トーン分析（まず言い方を読め）\n" +
-            $"→ 語尾、記号（笑/w/!/?/...）、敬語⇔タメ口、自嘲、照れ、皮肉などから発話の意図を読み取れ\n" +
-            $"→ 文字通りの意味と、言い方が示す意味にズレがないか確認せよ\n" +
-            $"\n" +
-            $"## 投影（{person}は今何を感じてる？何を求めてる？）\n" +
-            $"→ トーン分析と記憶を踏まえて、{person}の感情・欲求を推測せよ\n" +
-            $"→ 表面の感情だけでなく、裏にある感情も考えよ\n" +
-            $"\n" +
-            $"## 代入（自分がその立場で、その言い方をしたなら、相手にどう返してほしい？）\n" +
-            $"→ その感情とトーンを自分に代入して考えよ\n" +
-            $"\n" +
-            $"## 応答方針\n" +
-            $"→ 上の結果を踏まえて、どう返すべきか決めよ\n" +
-            $"→ 相手のトーンに合わせた返し方を選べ\n";
+        var output = _template
+            .Replace("{person}", person)
+            .Replace("{situation}", situation)
+            .Replace("{memory_context}", memoryContext);
 
         return (output, null);
     }
