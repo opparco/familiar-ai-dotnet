@@ -69,7 +69,6 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
         _tts = tts;
         _mobility = mobility;
         _memoryTool = new MemoryTool(memory, agentText);
-        _tomTool = new TomTool(memory, config.CompanionName);
 
         var promptDir = ResolvePromptDir();
         _systemTemplate = File.ReadAllText(Path.Combine(promptDir, "system.md"));
@@ -79,6 +78,8 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
         _tapePlanTemplate = File.ReadAllText(Path.Combine(promptDir, "tape_plan.md"));
         _tapeBlockedTemplate = File.ReadAllText(Path.Combine(promptDir, "tape_blocked.md"));
         _tapeReplanTemplate = File.ReadAllText(Path.Combine(promptDir, "tape_replan.md"));
+        var tomTemplate = File.ReadAllText(Path.Combine(promptDir, "tom.md"));
+        _tomTool = new TomTool(memory, tomTemplate, config.CompanionName);
 
         var dataDir = ResolveDataDir();
         _interoceptionConfig = InteroceptionConfig.Load(dataDir);
