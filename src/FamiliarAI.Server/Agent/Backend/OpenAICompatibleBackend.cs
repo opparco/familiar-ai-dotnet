@@ -23,9 +23,9 @@ public sealed class OpenAICompatibleBackend : ILlmBackend, IDisposable
         string baseUrl,
         ILogger<OpenAICompatibleBackend> logger)
     {
-        _model  = model;
+        _model = model;
         _logger = logger;
-        _http   = new HttpClient { BaseAddress = new Uri(baseUrl.TrimEnd('/') + "/") };
+        _http = new HttpClient { BaseAddress = new Uri(baseUrl.TrimEnd('/') + "/") };
         _http.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", string.IsNullOrEmpty(apiKey) ? "local" : apiKey);
     }
@@ -59,10 +59,10 @@ public sealed class OpenAICompatibleBackend : ILlmBackend, IDisposable
 
         var body = new JsonObject
         {
-            ["model"]      = _model,
+            ["model"] = _model,
             ["max_tokens"] = maxTokens,
-            ["messages"]   = messages,
-            ["stream"]     = true,
+            ["messages"] = messages,
+            ["stream"] = true,
         };
 
         if (tools is { Count: > 0 })
@@ -86,7 +86,7 @@ public sealed class OpenAICompatibleBackend : ILlmBackend, IDisposable
 
         // ── Parse SSE ────────────────────────────────────────────────
         var textChunks = new List<string>();
-        var rawTcs     = new Dictionary<int, RawTcAccum>();
+        var rawTcs = new Dictionary<int, RawTcAccum>();
         string? finishReason = null;
 
         using var reader = new StreamReader(stream, Encoding.UTF8);
@@ -161,7 +161,7 @@ public sealed class OpenAICompatibleBackend : ILlmBackend, IDisposable
 
         var rawAssistant = new JsonObject
         {
-            ["role"]    = "assistant",
+            ["role"] = "assistant",
             ["content"] = text.Length > 0 ? JsonValue.Create(text) : null,
         };
         if (toolCalls.Count > 0)
@@ -171,11 +171,11 @@ public sealed class OpenAICompatibleBackend : ILlmBackend, IDisposable
             {
                 tcsArr.Add(new JsonObject
                 {
-                    ["id"]   = tc.Id,
+                    ["id"] = tc.Id,
                     ["type"] = "function",
                     ["function"] = new JsonObject
                     {
-                        ["name"]      = tc.Name,
+                        ["name"] = tc.Name,
                         ["arguments"] = tc.Input.ToJsonString(),
                     },
                 });
@@ -194,9 +194,9 @@ public sealed class OpenAICompatibleBackend : ILlmBackend, IDisposable
     {
         var body = new JsonObject
         {
-            ["model"]      = _model,
+            ["model"] = _model,
             ["max_tokens"] = maxTokens,
-            ["messages"]   = new JsonArray { MakeUserMessage(prompt) },
+            ["messages"] = new JsonArray { MakeUserMessage(prompt) },
         };
 
         using var request = new HttpRequestMessage(HttpMethod.Post, "chat/completions");
@@ -206,7 +206,7 @@ public sealed class OpenAICompatibleBackend : ILlmBackend, IDisposable
         response.EnsureSuccessStatusCode();
 
         var json = await response.Content.ReadAsStringAsync(ct);
-        var doc  = JsonDocument.Parse(json);
+        var doc = JsonDocument.Parse(json);
         return doc.RootElement
             .GetProperty("choices")[0]
             .GetProperty("message")
@@ -220,8 +220,8 @@ public sealed class OpenAICompatibleBackend : ILlmBackend, IDisposable
 
     private sealed class RawTcAccum
     {
-        public string Id        { get; set; } = "";
-        public string Name      { get; set; } = "";
+        public string Id { get; set; } = "";
+        public string Name { get; set; } = "";
         public string Arguments { get; set; } = "";
     }
 }

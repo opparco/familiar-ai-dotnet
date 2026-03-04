@@ -28,8 +28,8 @@ public sealed class ObservationMemory : IDisposable
         string? dbPath = null)
     {
         _embedder = embedder;
-        _logger   = logger;
-        _dbPath   = dbPath ?? DefaultDbPath;
+        _logger = logger;
+        _dbPath = dbPath ?? DefaultDbPath;
     }
 
     // ---------------------------------------------------------------
@@ -81,16 +81,16 @@ public sealed class ObservationMemory : IDisposable
     public void Save(
         string content,
         string direction = "unknown",
-        string kind      = "observation",
-        string emotion   = "neutral")
+        string kind = "observation",
+        string emotion = "neutral")
     {
         try
         {
             lock (_lock)
             {
-                var db  = EnsureConnected();
+                var db = EnsureConnected();
                 var now = DateTime.Now;
-                var id  = Guid.NewGuid().ToString();
+                var id = Guid.NewGuid().ToString();
                 var vec = _embedder.EncodeDocument(content);
 
                 using var ins = db.CreateCommand();
@@ -98,19 +98,19 @@ public sealed class ObservationMemory : IDisposable
                     INSERT INTO observations (id, content, timestamp, date, time, direction, kind, emotion)
                     VALUES ($id, $content, $ts, $date, $time, $dir, $kind, $emotion)
                     """;
-                ins.Parameters.AddWithValue("$id",      id);
+                ins.Parameters.AddWithValue("$id", id);
                 ins.Parameters.AddWithValue("$content", content);
-                ins.Parameters.AddWithValue("$ts",      now.ToString("o"));
-                ins.Parameters.AddWithValue("$date",    now.ToString("yyyy-MM-dd"));
-                ins.Parameters.AddWithValue("$time",    now.ToString("HH:mm"));
-                ins.Parameters.AddWithValue("$dir",     direction);
-                ins.Parameters.AddWithValue("$kind",    kind);
+                ins.Parameters.AddWithValue("$ts", now.ToString("o"));
+                ins.Parameters.AddWithValue("$date", now.ToString("yyyy-MM-dd"));
+                ins.Parameters.AddWithValue("$time", now.ToString("HH:mm"));
+                ins.Parameters.AddWithValue("$dir", direction);
+                ins.Parameters.AddWithValue("$kind", kind);
                 ins.Parameters.AddWithValue("$emotion", emotion);
                 ins.ExecuteNonQuery();
 
                 using var emb = db.CreateCommand();
                 emb.CommandText = "INSERT INTO obs_embeddings (obs_id, vector) VALUES ($id, $vec)";
-                emb.Parameters.AddWithValue("$id",  id);
+                emb.Parameters.AddWithValue("$id", id);
                 emb.Parameters.AddWithValue("$vec", VectorToBytes(vec));
                 emb.ExecuteNonQuery();
 
@@ -126,8 +126,8 @@ public sealed class ObservationMemory : IDisposable
     public Task SaveAsync(
         string content,
         string direction = "unknown",
-        string kind      = "observation",
-        string emotion   = "neutral")
+        string kind = "observation",
+        string emotion = "neutral")
         => Task.Run(() => Save(content, direction, kind, emotion));
 
     // ---------------------------------------------------------------
@@ -153,7 +153,7 @@ public sealed class ObservationMemory : IDisposable
                     var rows = LoadAllWithVectors(db, kind);
                     if (rows.Count == 0) return [];
 
-                    var vecs   = rows.Select(r => r.Vector).ToArray();
+                    var vecs = rows.Select(r => r.Vector).ToArray();
                     var scores = RuriEmbedding.CosineSimilarity(qVec, vecs);
 
                     return rows
@@ -257,7 +257,7 @@ public sealed class ObservationMemory : IDisposable
         var lines = new List<string> { header };
         foreach (var m in memories)
         {
-            var score   = m.Score.HasValue ? $" (類似度:{m.Score:F2})" : "";
+            var score = m.Score.HasValue ? $" (類似度:{m.Score:F2})" : "";
             var emotion = m.Emotion is not ("neutral" or "") ? $" [{m.Emotion}]" : "";
             lines.Add($"- {m.Date} {m.Time}{score}{emotion}: {m.Content[..Math.Min(120, m.Content.Length)]}");
         }

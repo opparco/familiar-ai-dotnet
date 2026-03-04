@@ -28,7 +28,7 @@ public sealed class CameraTool : IDisposable
             ".familiar_ai", "captures");
 
     private readonly string _host;
-    private readonly int    _port;
+    private readonly int _port;
     private readonly string _username;
     private readonly string _password;
     private readonly HttpClient _http;
@@ -42,12 +42,12 @@ public sealed class CameraTool : IDisposable
         string host, string username, string password,
         int port, ILogger<CameraTool> logger)
     {
-        _host     = host;
-        _port     = port;
+        _host = host;
+        _port = port;
         _username = username;
         _password = password;
-        _logger   = logger;
-        _http     = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
+        _logger = logger;
+        _http = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
     }
 
     // ---------------------------------------------------------------
@@ -112,8 +112,8 @@ public sealed class CameraTool : IDisposable
         if (toolName == "look")
         {
             var direction = input["direction"]?.GetValue<string>() ?? "left";
-            var degrees   = input["degrees"]?.GetValue<int>() ?? 30;
-            var result    = await MoveAsync(direction, degrees, ct);
+            var degrees = input["degrees"]?.GetValue<int>() ?? 30;
+            var result = await MoveAsync(direction, degrees, ct);
             return (result, null);
         }
 
@@ -127,7 +127,7 @@ public sealed class CameraTool : IDisposable
     private async Task<(string? base64, string? savePath)> CaptureAsync(CancellationToken ct)
     {
         var streamUrl = $"rtsp://{_username}:{_password}@{_host}:554/stream1";
-        var tmpPath   = Path.ChangeExtension(Path.GetTempFileName(), ".jpg");
+        var tmpPath = Path.ChangeExtension(Path.GetTempFileName(), ".jpg");
         try
         {
             var psi = new System.Diagnostics.ProcessStartInfo("ffmpeg")
@@ -144,8 +144,8 @@ public sealed class CameraTool : IDisposable
                     "-y",              tmpPath,
                 },
                 RedirectStandardOutput = true,
-                RedirectStandardError  = true,
-                UseShellExecute        = false,
+                RedirectStandardError = true,
+                UseShellExecute = false,
             };
 
             using var proc = System.Diagnostics.Process.Start(psi)
@@ -159,10 +159,10 @@ public sealed class CameraTool : IDisposable
             if (!fi.Exists || fi.Length == 0) return (null, null);
 
             var data = await File.ReadAllBytesAsync(tmpPath, ct);
-            var b64  = Convert.ToBase64String(data);
+            var b64 = Convert.ToBase64String(data);
 
             Directory.CreateDirectory(CaptureDir);
-            var ts       = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+            var ts = DateTime.Now.ToString("yyyyMMdd_HHmmss");
             var savePath = Path.Combine(CaptureDir, $"capture_{ts}.jpg");
             await File.WriteAllBytesAsync(savePath, data, ct);
 
@@ -209,7 +209,7 @@ public sealed class CameraTool : IDisposable
             const string profileBody =
                 """<GetProfiles xmlns="http://www.onvif.org/ver10/media/wsdl"/>""";
             var profileXml = await SoapCallAsync(mediaUrl, profileBody, ct);
-            _profileToken  = FindProfileToken(profileXml) ?? "Profile_1";
+            _profileToken = FindProfileToken(profileXml) ?? "Profile_1";
 
             _logger.LogInformation(
                 "Camera connected: {Host} profile={Token} ptz={Ptz}",
@@ -220,7 +220,7 @@ public sealed class CameraTool : IDisposable
         {
             _logger.LogWarning("Camera connection failed: {Ex}", ex.Message);
             _profileToken = null;
-            _ptzUrl       = null;
+            _ptzUrl = null;
             return false;
         }
     }
@@ -234,11 +234,11 @@ public sealed class CameraTool : IDisposable
             // Tapo C220 axis convention: positive x = physical LEFT, positive y = physical UP
             var (pan, tilt) = direction switch
             {
-                "left"  => ( degrees / 180.0,  0.0),
-                "right" => (-degrees / 180.0,  0.0),
-                "up"    => ( 0.0,  degrees / 90.0),
-                "down"  => ( 0.0, -degrees / 90.0),
-                _       => (0.0, 0.0),
+                "left" => (degrees / 180.0, 0.0),
+                "right" => (-degrees / 180.0, 0.0),
+                "up" => (0.0, degrees / 90.0),
+                "down" => (0.0, -degrees / 90.0),
+                _ => (0.0, 0.0),
             };
 
             var body = $"""
@@ -259,7 +259,7 @@ public sealed class CameraTool : IDisposable
             _logger.LogWarning("Camera move failed: {Ex}", ex.Message);
             // Reset so next call re-discovers endpoints
             _profileToken = null;
-            _ptzUrl       = null;
+            _ptzUrl = null;
             return $"Camera move failed: {ex.Message}";
         }
     }
@@ -285,16 +285,16 @@ public sealed class CameraTool : IDisposable
             </s:Envelope>
             """;
 
-        using var content  = new StringContent(envelope, Encoding.UTF8, "application/soap+xml");
+        using var content = new StringContent(envelope, Encoding.UTF8, "application/soap+xml");
         using var response = await _http.PostAsync(url, content, ct);
         return await response.Content.ReadAsStringAsync(ct);
     }
 
     private string BuildWsSecurity()
     {
-        var nonce    = RandomNumberGenerator.GetBytes(16);
-        var created  = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
-        var digest   = WsDigest(nonce, created);
+        var nonce = RandomNumberGenerator.GetBytes(16);
+        var created = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
+        var digest = WsDigest(nonce, created);
         var nonceB64 = Convert.ToBase64String(nonce);
 
         return $"""
@@ -312,7 +312,7 @@ public sealed class CameraTool : IDisposable
     /// <summary>WS-Security PasswordDigest = Base64(SHA1(nonce + created + password))</summary>
     private string WsDigest(byte[] nonce, string created)
     {
-        var createdBytes  = Encoding.UTF8.GetBytes(created);
+        var createdBytes = Encoding.UTF8.GetBytes(created);
         var passwordBytes = Encoding.UTF8.GetBytes(_password);
         var raw = new byte[nonce.Length + createdBytes.Length + passwordBytes.Length];
         nonce.CopyTo(raw, 0);

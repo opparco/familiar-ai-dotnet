@@ -65,7 +65,7 @@ public sealed class TtsTool : IDisposable
     {
         if (toolName == "say")
         {
-            var text   = input["text"]?.GetValue<string>() ?? "";
+            var text = input["text"]?.GetValue<string>() ?? "";
             var result = await SayAsync(text, ct);
             return (result, null);
         }
@@ -122,8 +122,8 @@ public sealed class TtsTool : IDisposable
             var psi = new System.Diagnostics.ProcessStartInfo(args[0])
             {
                 RedirectStandardOutput = true,
-                RedirectStandardError  = true,
-                UseShellExecute        = false,
+                RedirectStandardError = true,
+                UseShellExecute = false,
             };
             foreach (var a in args.Skip(1)) psi.ArgumentList.Add(a);
 
@@ -167,17 +167,17 @@ public interface ITtsEngine
 /// </summary>
 public sealed class VoicevoxEngine : ITtsEngine, IDisposable
 {
-    private readonly string     _url;
-    private readonly int        _speaker;
+    private readonly string _url;
+    private readonly int _speaker;
     private readonly HttpClient _http;
 
     public string EngineName => "voicevox";
 
     public VoicevoxEngine(string url = "http://localhost:50021", int speaker = 3)
     {
-        _url     = url.TrimEnd('/');
+        _url = url.TrimEnd('/');
         _speaker = speaker;
-        _http    = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
+        _http = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
     }
 
     public bool IsAvailable()
@@ -200,7 +200,7 @@ public sealed class VoicevoxEngine : ITtsEngine, IDisposable
 
         // Step 2: synthesis
         var synthUrl = $"{_url}/synthesis?speaker={_speaker}";
-        using var body  = new StringContent(queryJson, System.Text.Encoding.UTF8, "application/json");
+        using var body = new StringContent(queryJson, System.Text.Encoding.UTF8, "application/json");
         using var sResp = await _http.PostAsync(synthUrl, body, ct);
         sResp.EnsureSuccessStatusCode();
         var wav = await sResp.Content.ReadAsByteArrayAsync(ct);
@@ -218,7 +218,7 @@ public sealed class VoicevoxEngine : ITtsEngine, IDisposable
 /// </summary>
 public sealed class ElevenLabsEngine : ITtsEngine, IDisposable
 {
-    private readonly string     _voiceId;
+    private readonly string _voiceId;
     private readonly HttpClient _http;
 
     public string EngineName => "elevenlabs";
@@ -226,7 +226,7 @@ public sealed class ElevenLabsEngine : ITtsEngine, IDisposable
     public ElevenLabsEngine(string apiKey, string voiceId)
     {
         _voiceId = voiceId;
-        _http    = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+        _http = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
         _http.DefaultRequestHeaders.Add("xi-api-key", apiKey);
     }
 
@@ -237,16 +237,16 @@ public sealed class ElevenLabsEngine : ITtsEngine, IDisposable
         var url = $"https://api.elevenlabs.io/v1/text-to-speech/{_voiceId}";
         var payload = new JsonObject
         {
-            ["text"]     = text,
+            ["text"] = text,
             ["model_id"] = "eleven_flash_v2_5",
             ["voice_settings"] = new JsonObject
             {
-                ["stability"]        = 0.5,
+                ["stability"] = 0.5,
                 ["similarity_boost"] = 0.75,
             },
         };
 
-        using var content  = new StringContent(
+        using var content = new StringContent(
             payload.ToJsonString(), System.Text.Encoding.UTF8, "application/json");
         using var response = await _http.PostAsync(url, content, ct);
 

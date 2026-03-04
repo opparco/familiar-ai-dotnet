@@ -17,11 +17,11 @@ namespace FamiliarAI.Server;
 public sealed class AgentLoopService : BackgroundService
 {
     private static readonly TimeSpan IdleCheckInterval = TimeSpan.FromSeconds(10);
-    private static readonly TimeSpan DesireCooldown    = TimeSpan.FromSeconds(90);
+    private static readonly TimeSpan DesireCooldown = TimeSpan.FromSeconds(90);
 
     private readonly FamiliarServer _server;
-    private readonly DesireSystem   _desires;
-    private readonly ChatLogger     _chatLogger;
+    private readonly DesireSystem _desires;
+    private readonly ChatLogger _chatLogger;
     private readonly ILogger<AgentLoopService> _logger;
 
     public AgentLoopService(
@@ -30,10 +30,10 @@ public sealed class AgentLoopService : BackgroundService
         ChatLogger chatLogger,
         ILogger<AgentLoopService> logger)
     {
-        _server     = server;
-        _desires    = desires;
+        _server = server;
+        _desires = desires;
         _chatLogger = chatLogger;
-        _logger     = logger;
+        _logger = logger;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -80,7 +80,7 @@ public sealed class AgentLoopService : BackgroundService
             }
 
             var dominant = _desires.GetDominant();
-            var name     = dominant?.name ?? "unknown";
+            var name = dominant?.name ?? "unknown";
 
             // Echo murmur to stdout/log and broadcast to clients
             var murmur = _desires.GetMurmur(name);

@@ -5,8 +5,8 @@ namespace FamiliarAI.Server.Agent;
 /// <summary>A single band in an interoception axis (inclusive min, exclusive max).</summary>
 public sealed record InteroceptionBand
 {
-    public int    Min  { get; init; }
-    public int    Max  { get; init; }
+    public int Min { get; init; }
+    public int Max { get; init; }
     public string Text { get; init; } = "";
 }
 
@@ -17,8 +17,8 @@ public sealed record InteroceptionBand
 public sealed class InteroceptionConfig
 {
     public List<InteroceptionBand> TimeOfDay { get; init; } = [];
-    public List<InteroceptionBand> Uptime    { get; init; } = [];  // minutes
-    public List<InteroceptionBand> Social    { get; init; } = [];  // turn count
+    public List<InteroceptionBand> Uptime { get; init; } = [];  // minutes
+    public List<InteroceptionBand> Social { get; init; } = [];  // turn count
     public string Template { get; init; } =
         "[How you feel right now, privately — do NOT mention this directly]\n{time} {uptime} {social}";
 
@@ -35,9 +35,9 @@ public sealed class InteroceptionConfig
     /// <summary>Returns the interoception string for the given signals.</summary>
     public string Resolve(int hour, double uptimeMinutes, int turnCount) =>
         Template
-            .Replace("{time}",   Match(TimeOfDay, hour))
-            .Replace("{uptime}", Match(Uptime,    uptimeMinutes))
-            .Replace("{social}", Match(Social,    turnCount));
+            .Replace("{time}", Match(TimeOfDay, hour))
+            .Replace("{uptime}", Match(Uptime, uptimeMinutes))
+            .Replace("{social}", Match(Social, turnCount));
 
     // Returns text of the first band whose [Min, Max) range contains value;
     // falls back to the last band if nothing matches.

@@ -5,22 +5,22 @@ namespace FamiliarAI.Server.Agent;
 /// <summary>Localised labels used when writing memory records.</summary>
 public sealed record MemoryDirections
 {
-    public string Observation  { get; init; } = "observation";
+    public string Observation { get; init; } = "observation";
     public string Conversation { get; init; } = "conversation";
-    public string SelfModel    { get; init; } = "self_model";
+    public string SelfModel { get; init; } = "self_model";
 }
 
 /// <summary>Section headers used when formatting memory records into context blocks.</summary>
 public sealed record MemoryLabels
 {
     /// <summary>Header for FormatForContext (recalled observations).</summary>
-    public string Memories    { get; init; } = "[Past memories]:";
+    public string Memories { get; init; } = "[Past memories]:";
 
     /// <summary>Header for FormatFeelingsForContext (recent feelings/conversations).</summary>
-    public string Feelings    { get; init; } = "[Recent feelings]:";
+    public string Feelings { get; init; } = "[Recent feelings]:";
 
     /// <summary>Header for FormatSelfModelForContext (self-model records).</summary>
-    public string SelfModel   { get; init; } = "[Self-model]:";
+    public string SelfModel { get; init; } = "[Self-model]:";
 
     /// <summary>Header for FormatCuriositiesForContext (open curiosities).</summary>
     public string Curiosities { get; init; } = "[Open curiosities]:";
@@ -46,10 +46,10 @@ public sealed record NudgeText
     public string SilentReminder { get; init; } = "";
 
     /// <summary>Injected when say() was already called but the agent keeps using tools.</summary>
-    public string StopExploring  { get; init; } = "";
+    public string StopExploring { get; init; } = "";
 
     /// <summary>Injected when max iterations are reached to force a final response.</summary>
-    public string ForceEnd       { get; init; } = "";
+    public string ForceEnd { get; init; } = "";
 }
 
 /// <summary>Text fragments related to the inner-voice / desire-turn mechanism.</summary>

@@ -69,10 +69,10 @@ public sealed class KimiBackend : ILlmBackend, IDisposable
 
         var body = new JsonObject
         {
-            ["model"]      = _model,
+            ["model"] = _model,
             ["max_tokens"] = maxTokens,
-            ["messages"]   = messages,
-            ["stream"]     = true,
+            ["messages"] = messages,
+            ["stream"] = true,
         };
 
         if (tools is { Count: > 0 })
@@ -96,10 +96,10 @@ public sealed class KimiBackend : ILlmBackend, IDisposable
 
         // ── Parse SSE ────────────────────────────────────────────────
         // Simple line-based parser: each SSE event starts with "data: "
-        var textChunks      = new List<string>();
+        var textChunks = new List<string>();
         var reasoningChunks = new List<string>();
         // tool call delta accumulator: index → {id, name, arguments}
-        var rawTcs          = new Dictionary<int, RawTcAccum>();
+        var rawTcs = new Dictionary<int, RawTcAccum>();
         string? finishReason = null;
 
         using var reader = new StreamReader(stream, Encoding.UTF8);
@@ -182,7 +182,7 @@ public sealed class KimiBackend : ILlmBackend, IDisposable
         // Build raw assistant — include reasoning_content so Kimi accepts it next turn
         var rawAssistant = new JsonObject
         {
-            ["role"]    = "assistant",
+            ["role"] = "assistant",
             ["content"] = text.Length > 0 ? JsonValue.Create(text) : null,
         };
         if (reasoningChunks.Count > 0)
@@ -194,11 +194,11 @@ public sealed class KimiBackend : ILlmBackend, IDisposable
             {
                 tcsArr.Add(new JsonObject
                 {
-                    ["id"]   = tc.Id,
+                    ["id"] = tc.Id,
                     ["type"] = "function",
                     ["function"] = new JsonObject
                     {
-                        ["name"]      = tc.Name,
+                        ["name"] = tc.Name,
                         ["arguments"] = tc.Input.ToJsonString(),
                     },
                 });
@@ -217,9 +217,9 @@ public sealed class KimiBackend : ILlmBackend, IDisposable
     {
         var body = new JsonObject
         {
-            ["model"]      = _model,
+            ["model"] = _model,
             ["max_tokens"] = maxTokens,
-            ["messages"]   = new JsonArray { MakeUserMessage(prompt) },
+            ["messages"] = new JsonArray { MakeUserMessage(prompt) },
         };
 
         using var request = new HttpRequestMessage(HttpMethod.Post, "chat/completions");
@@ -229,7 +229,7 @@ public sealed class KimiBackend : ILlmBackend, IDisposable
         response.EnsureSuccessStatusCode();
 
         var json = await response.Content.ReadAsStringAsync(ct);
-        var doc  = JsonDocument.Parse(json);
+        var doc = JsonDocument.Parse(json);
         return doc.RootElement
             .GetProperty("choices")[0]
             .GetProperty("message")
@@ -243,8 +243,8 @@ public sealed class KimiBackend : ILlmBackend, IDisposable
 
     private sealed class RawTcAccum
     {
-        public string Id        { get; set; } = "";
-        public string Name      { get; set; } = "";
+        public string Id { get; set; } = "";
+        public string Name { get; set; } = "";
         public string Arguments { get; set; } = "";
     }
 }

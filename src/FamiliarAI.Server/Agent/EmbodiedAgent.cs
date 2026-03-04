@@ -22,8 +22,8 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
     private readonly ObservationMemory _memory;
     private readonly MemoryTool _memoryTool;
     private readonly TomTool _tomTool;
-    private readonly CameraTool?   _camera;
-    private readonly TtsTool?     _tts;
+    private readonly CameraTool? _camera;
+    private readonly TtsTool? _tts;
     private readonly MobilityTool? _mobility;
     private readonly ILogger<EmbodiedAgent> _logger;
 
@@ -46,7 +46,7 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
     private int _turnCount;
     private readonly DateTime _startedAt = DateTime.Now;
 
-    public string AgentName    { get; }
+    public string AgentName { get; }
     public string CompanionName { get; }
 
     public EmbodiedAgent(
@@ -55,29 +55,29 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
         ILlmBackend backend,
         ObservationMemory memory,
         ILogger<EmbodiedAgent> logger,
-        CameraTool?   camera   = null,
-        TtsTool?      tts      = null,
+        CameraTool? camera = null,
+        TtsTool? tts = null,
         MobilityTool? mobility = null)
     {
-        AgentName    = config.AgentName;
+        AgentName = config.AgentName;
         CompanionName = config.CompanionName;
-        _agentText   = agentText;
-        _backend     = backend;
-        _memory      = memory;
-        _logger      = logger;
-        _camera      = camera;
-        _tts         = tts;
-        _mobility    = mobility;
-        _memoryTool  = new MemoryTool(memory, agentText);
-        _tomTool     = new TomTool(memory, config.CompanionName);
+        _agentText = agentText;
+        _backend = backend;
+        _memory = memory;
+        _logger = logger;
+        _camera = camera;
+        _tts = tts;
+        _mobility = mobility;
+        _memoryTool = new MemoryTool(memory, agentText);
+        _tomTool = new TomTool(memory, config.CompanionName);
 
         var promptDir = ResolvePromptDir();
-        _systemTemplate     = File.ReadAllText(Path.Combine(promptDir, "system.md"));
-        _emotionTemplate    = File.ReadAllText(Path.Combine(promptDir, "emotion.md"));
-        _summaryTemplate    = File.ReadAllText(Path.Combine(promptDir, "summary.md"));
-        _selfModelTemplate  = File.ReadAllText(Path.Combine(promptDir, "self_model.md"));
-        _tapePlanTemplate   = File.ReadAllText(Path.Combine(promptDir, "tape_plan.md"));
-        _tapeBlockedTemplate= File.ReadAllText(Path.Combine(promptDir, "tape_blocked.md"));
+        _systemTemplate = File.ReadAllText(Path.Combine(promptDir, "system.md"));
+        _emotionTemplate = File.ReadAllText(Path.Combine(promptDir, "emotion.md"));
+        _summaryTemplate = File.ReadAllText(Path.Combine(promptDir, "summary.md"));
+        _selfModelTemplate = File.ReadAllText(Path.Combine(promptDir, "self_model.md"));
+        _tapePlanTemplate = File.ReadAllText(Path.Combine(promptDir, "tape_plan.md"));
+        _tapeBlockedTemplate = File.ReadAllText(Path.Combine(promptDir, "tape_blocked.md"));
         _tapeReplanTemplate = File.ReadAllText(Path.Combine(promptDir, "tape_replan.md"));
 
         var dataDir = ResolveDataDir();
@@ -141,15 +141,15 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
         // ── Build tool list ───────────────────────────────────────────
         var tools = _memoryTool.GetToolDefinitions().ToList();
         tools.AddRange(_tomTool.GetToolDefinitions());
-        if (_camera   is not null) tools.AddRange(_camera.GetToolDefinitions());
-        if (_tts      is not null) tools.AddRange(_tts.GetToolDefinitions());
+        if (_camera is not null) tools.AddRange(_camera.GetToolDefinitions());
+        if (_tts is not null) tools.AddRange(_tts.GetToolDefinitions());
         if (_mobility is not null) tools.AddRange(_mobility.GetToolDefinitions());
 
         // ── ReAct loop ────────────────────────────────────────────────
-        bool cameraUsed   = false;
-        bool sayUsed      = false;
-        int  nonSayStreak = 0;
-        string finalText  = _agentText.NoResponse;
+        bool cameraUsed = false;
+        bool sayUsed = false;
+        int nonSayStreak = 0;
+        string finalText = _agentText.NoResponse;
 
         for (int i = 0; i < MaxIterations; i++)
         {
@@ -177,9 +177,9 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
                 var toolResults = new List<(string text, string? image)>();
                 foreach (var tc in result.ToolCalls)
                 {
-                    if (tc.Name == "see")  cameraUsed = true;
-                    if (tc.Name == "say")  { sayUsed = true; nonSayStreak = 0; }
-                    else                   nonSayStreak++;
+                    if (tc.Name == "see") cameraUsed = true;
+                    if (tc.Name == "say") { sayUsed = true; nonSayStreak = 0; }
+                    else nonSayStreak++;
 
                     callbacks.OnAction?.Invoke(tc.Name, tc.Input
                         .ToDictionary(kv => kv.Key, kv => (object?)kv.Value?.ToString()));
@@ -224,9 +224,9 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
                     {
                         _history.Add(new JsonObject
                         {
-                            ["role"]         = "tool",
+                            ["role"] = "tool",
                             ["tool_call_id"] = tc.Id,
-                            ["content"]      = text,
+                            ["content"] = text,
                         });
                     }
                     snapshot = [.. _history];
@@ -305,15 +305,15 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
         string innerVoice,
         string planCtx)
     {
-        var me      = LoadMeMd();
+        var me = LoadMeMd();
         var system = _systemTemplate.Replace("{max_steps}", MaxIterations.ToString());
-        var intero  = BuildInteroception();
+        var intero = BuildInteroception();
 
         var parts = new List<string>();
         if (!string.IsNullOrEmpty(me)) parts.Add(me);
         parts.Add(system);
         parts.Add(intero);
-        if (!string.IsNullOrEmpty(morningCtx))    parts.Add(morningCtx);
+        if (!string.IsNullOrEmpty(morningCtx)) parts.Add(morningCtx);
         else if (!string.IsNullOrEmpty(feelingsCtx)) parts.Add(feelingsCtx);
         if (!string.IsNullOrEmpty(innerVoice))
             parts.Add(_agentText.InnerVoice.Header + "\n" + innerVoice);
@@ -329,7 +329,7 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
 
     private string BuildInteroception()
     {
-        var now    = DateTime.Now;
+        var now = DateTime.Now;
         var uptime = now - _startedAt;
         return _interoceptionConfig.Resolve(now.Hour, uptime.TotalMinutes, _turnCount);
     }
@@ -342,14 +342,14 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
     {
         var (selfModel, curiosities, feelings) = await (
             _memory.RecallByKindAsync("self_model", 5),
-            _memory.RecallByKindAsync("curiosity",  3),
+            _memory.RecallByKindAsync("curiosity", 3),
             _memory.RecentFeelingsAsync(3)
         ).WhenAll();
 
         var parts = new List<string>();
-        if (selfModel.Count > 0)   parts.Add(ObservationMemory.FormatSelfModelForContext(selfModel, _agentText.MemoryLabels.SelfModel));
+        if (selfModel.Count > 0) parts.Add(ObservationMemory.FormatSelfModelForContext(selfModel, _agentText.MemoryLabels.SelfModel));
         if (curiosities.Count > 0) parts.Add(ObservationMemory.FormatCuriositiesForContext(curiosities, _agentText.MemoryLabels.Curiosities));
-        if (feelings.Count > 0)    parts.Add(ObservationMemory.FormatFeelingsForContext(feelings, _agentText.MemoryLabels.Feelings));
+        if (feelings.Count > 0) parts.Add(ObservationMemory.FormatFeelingsForContext(feelings, _agentText.MemoryLabels.Feelings));
 
         if (parts.Count == 0)
             return _agentText.Morning.NoMemories;
@@ -393,7 +393,7 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
         var prompt = _emotionTemplate
             .Replace("{emotions}", string.Join(" / ", _agentText.Emotions))
             .Replace("{text}", text[..Math.Min(400, text.Length)]);
-        var label  = (await _backend.CompleteAsync(prompt, maxTokens: 10)).Trim().ToLower();
+        var label = (await _backend.CompleteAsync(prompt, maxTokens: 10)).Trim().ToLower();
         return _agentText.Emotions.Contains(label) ? label : "neutral";
     }
 
@@ -411,7 +411,7 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
     {
         try
         {
-            var prompt  = _selfModelTemplate.Replace("{text}", text[..Math.Min(400, text.Length)]);
+            var prompt = _selfModelTemplate.Replace("{text}", text[..Math.Min(400, text.Length)]);
             var insight = (await _backend.CompleteAsync(prompt, maxTokens: 80)).Trim();
             if (!string.IsNullOrEmpty(insight) && insight.ToLower() != "nothing")
             {
@@ -432,14 +432,14 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
     private async Task<string> GeneratePlanAsync(string userInput, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(userInput)) return "";
-        var allDefs   = _memoryTool.GetToolDefinitions()
+        var allDefs = _memoryTool.GetToolDefinitions()
             .Concat(_tomTool.GetToolDefinitions())
-            .Concat(_camera?.GetToolDefinitions()   ?? [])
-            .Concat(_tts?.GetToolDefinitions()      ?? [])
+            .Concat(_camera?.GetToolDefinitions() ?? [])
+            .Concat(_tts?.GetToolDefinitions() ?? [])
             .Concat(_mobility?.GetToolDefinitions() ?? []);
         var toolNames = string.Join(", ", allDefs.Select(t => t.Name));
         var prompt = _tapePlanTemplate
-            .Replace("{tools}",   toolNames)
+            .Replace("{tools}", toolNames)
             .Replace("{request}", userInput[..Math.Min(300, userInput.Length)]);
         try
         {
@@ -452,8 +452,8 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
         string plan, string tool, string argsSummary, string result, CancellationToken ct)
     {
         var prompt = _tapeBlockedTemplate
-            .Replace("{plan}",         plan[..Math.Min(400, plan.Length)])
-            .Replace("{tool}",         tool)
+            .Replace("{plan}", plan[..Math.Min(400, plan.Length)])
+            .Replace("{tool}", tool)
             .Replace("{args_summary}", argsSummary)
             .Replace("{result_summary}", result[..Math.Min(300, result.Length)]);
         try
@@ -468,8 +468,8 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
         string plan, string tool, string argsSummary, string result, CancellationToken ct)
     {
         var prompt = _tapeReplanTemplate
-            .Replace("{plan}",         plan[..Math.Min(400, plan.Length)])
-            .Replace("{tool}",         tool)
+            .Replace("{plan}", plan[..Math.Min(400, plan.Length)])
+            .Replace("{tool}", tool)
             .Replace("{args_summary}", argsSummary)
             .Replace("{result_summary}", result[..Math.Min(300, result.Length)]);
         try
@@ -522,7 +522,7 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
     }
 
     private static string ResolvePromptDir() => ResolveDir("prompts");
-    private static string ResolveDataDir()   => ResolveDir("data");
+    private static string ResolveDataDir() => ResolveDir("data");
 
     public void Dispose()
     {

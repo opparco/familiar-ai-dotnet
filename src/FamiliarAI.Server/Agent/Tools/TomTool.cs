@@ -22,7 +22,7 @@ public sealed class TomTool
 
     public TomTool(ObservationMemory memory, string defaultPerson = "Alex")
     {
-        _memory       = memory;
+        _memory = memory;
         _defaultPerson = defaultPerson;
     }
 
@@ -68,10 +68,10 @@ public sealed class TomTool
             return ($"Unknown tool: {toolName}", null);
 
         var situation = input["situation"]?.GetValue<string>() ?? "";
-        var person    = input["person"]?.GetValue<string>() ?? _defaultPerson;
+        var person = input["person"]?.GetValue<string>() ?? _defaultPerson;
 
         // Recall memories relevant to this person and situation
-        var query   = $"{person} コミュニケーション 性格 会話パターン {situation}";
+        var query = $"{person} コミュニケーション 性格 会話パターン {situation}";
         var memories = await _memory.RecallAsync(query, n: 5);
 
         var memoryContext = "";

@@ -45,18 +45,18 @@ public sealed class MobilityTool : IDisposable
     private readonly ILogger<MobilityTool> _logger;
 
     private string? _accessToken;
-    private long    _tokenExpiresAt; // Unix seconds
+    private long _tokenExpiresAt; // Unix seconds
 
     public MobilityTool(
         string apiRegion, string apiKey, string apiSecret, string deviceId,
         ILogger<MobilityTool> logger)
     {
-        _apiKey    = apiKey;
+        _apiKey = apiKey;
         _apiSecret = apiSecret;
-        _deviceId  = deviceId;
-        _baseUrl   = RegionHosts.GetValueOrDefault(apiRegion.ToLower(), RegionHosts["eu"]);
-        _logger    = logger;
-        _http      = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
+        _deviceId = deviceId;
+        _baseUrl = RegionHosts.GetValueOrDefault(apiRegion.ToLower(), RegionHosts["eu"]);
+        _logger = logger;
+        _http = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
     }
 
     // ---------------------------------------------------------------
@@ -99,7 +99,7 @@ public sealed class MobilityTool : IDisposable
             return ($"Unknown tool: {toolName}", null);
 
         var direction = input["direction"]?.GetValue<string>() ?? "stop";
-        var duration  = input["duration"]?.GetValue<double?>();
+        var duration = input["duration"]?.GetValue<double?>();
 
         try
         {
@@ -120,11 +120,11 @@ public sealed class MobilityTool : IDisposable
     private static readonly IReadOnlyDictionary<string, string> TuyaDirections =
         new Dictionary<string, string>
         {
-            ["forward"]  = "forward",
+            ["forward"] = "forward",
             ["backward"] = "backward",
-            ["left"]     = "turn_left",
-            ["right"]    = "turn_right",
-            ["stop"]     = "stop",
+            ["left"] = "turn_left",
+            ["right"] = "turn_right",
+            ["stop"] = "stop",
         };
 
     private async Task<string> MoveAsync(string direction, double? duration, CancellationToken ct)
@@ -150,22 +150,22 @@ public sealed class MobilityTool : IDisposable
 
     private async Task SendCommandAsync(string tuyaDirection, CancellationToken ct)
     {
-        var token  = await GetTokenAsync(ct);
-        var path   = $"/v1.0/devices/{_deviceId}/commands";
-        var body   = JsonSerializer.Serialize(new
+        var token = await GetTokenAsync(ct);
+        var path = $"/v1.0/devices/{_deviceId}/commands";
+        var body = JsonSerializer.Serialize(new
         {
             commands = new[] { new { code = "direction_control", value = tuyaDirection } },
         });
 
-        var t    = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString();
+        var t = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString();
         var sign = SignRequest(_apiKey, token, t, "POST", path, body);
 
         using var request = new HttpRequestMessage(HttpMethod.Post, _baseUrl + path);
-        request.Headers.Add("client_id",    _apiKey);
+        request.Headers.Add("client_id", _apiKey);
         request.Headers.Add("access_token", token);
-        request.Headers.Add("sign_method",  "HMAC-SHA256");
-        request.Headers.Add("t",            t);
-        request.Headers.Add("sign",         sign);
+        request.Headers.Add("sign_method", "HMAC-SHA256");
+        request.Headers.Add("t", t);
+        request.Headers.Add("sign", sign);
         request.Content = new StringContent(body, Encoding.UTF8, "application/json");
 
         using var response = await _http.SendAsync(request, ct);
@@ -176,7 +176,7 @@ public sealed class MobilityTool : IDisposable
         if (!success)
         {
             var code = doc.RootElement.TryGetProperty("code", out var c) ? c.ToString() : "?";
-            var msg  = doc.RootElement.TryGetProperty("msg",  out var m) ? m.GetString() : json;
+            var msg = doc.RootElement.TryGetProperty("msg", out var m) ? m.GetString() : json;
             throw new Exception($"Tuya API error {code}: {msg}");
         }
 
@@ -189,15 +189,15 @@ public sealed class MobilityTool : IDisposable
         if (_accessToken is not null && now < _tokenExpiresAt - 60)
             return _accessToken;
 
-        var t    = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString();
+        var t = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString();
         var sign = SignTokenRequest(_apiKey, t);
         var path = "/v1.0/token?grant_type=1";
 
         using var request = new HttpRequestMessage(HttpMethod.Get, _baseUrl + path);
-        request.Headers.Add("client_id",   _apiKey);
+        request.Headers.Add("client_id", _apiKey);
         request.Headers.Add("sign_method", "HMAC-SHA256");
-        request.Headers.Add("t",           t);
-        request.Headers.Add("sign",        sign);
+        request.Headers.Add("t", t);
+        request.Headers.Add("sign", sign);
 
         using var response = await _http.SendAsync(request, ct);
         var json = await response.Content.ReadAsStringAsync(ct);
@@ -206,9 +206,9 @@ public sealed class MobilityTool : IDisposable
         if (!doc.RootElement.TryGetProperty("success", out var s) || !s.GetBoolean())
             throw new Exception($"Tuya token request failed: {json}");
 
-        var result     = doc.RootElement.GetProperty("result");
-        _accessToken   = result.GetProperty("access_token").GetString()!;
-        var expiresIn  = result.TryGetProperty("expire_time", out var e) ? e.GetInt64() : 7200;
+        var result = doc.RootElement.GetProperty("result");
+        _accessToken = result.GetProperty("access_token").GetString()!;
+        var expiresIn = result.TryGetProperty("expire_time", out var e) ? e.GetInt64() : 7200;
         _tokenExpiresAt = now + expiresIn;
 
         _logger.LogDebug("Tuya token obtained, expires in {Secs}s", expiresIn);
@@ -233,15 +233,15 @@ public sealed class MobilityTool : IDisposable
     private string SignRequest(string apiKey, string token, string t,
         string method, string path, string body)
     {
-        var bodyHash    = Sha256Hex(body);
+        var bodyHash = Sha256Hex(body);
         var stringToSign = $"{method}\n{bodyHash}\n\n{path}";
-        var msg          = apiKey + token + t + stringToSign;
+        var msg = apiKey + token + t + stringToSign;
         return HmacSha256Upper(msg);
     }
 
     private string HmacSha256Upper(string message)
     {
-        var key  = Encoding.UTF8.GetBytes(_apiSecret);
+        var key = Encoding.UTF8.GetBytes(_apiSecret);
         var data = Encoding.UTF8.GetBytes(message);
         return Convert.ToHexString(HMACSHA256.HashData(key, data));
         // Convert.ToHexString is already uppercase

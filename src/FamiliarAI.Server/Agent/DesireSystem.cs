@@ -26,20 +26,20 @@ public sealed class DesireSystem
     private static readonly IReadOnlyDictionary<string, float> DefaultDesires =
         new Dictionary<string, float>
         {
-            ["look_around"]     = 0.1f,
-            ["explore"]         = 0.1f,
+            ["look_around"] = 0.1f,
+            ["explore"] = 0.1f,
             ["greet_companion"] = 0.0f,
-            ["rest"]            = 0.0f,
+            ["rest"] = 0.0f,
         };
 
     // Growth per second of inactivity
     private static readonly IReadOnlyDictionary<string, float> GrowthRates =
         new Dictionary<string, float>
         {
-            ["look_around"]     = 0.012f,   // reaches 0.6 after ~40s
-            ["explore"]         = 0.005f,   // reaches 0.6 after ~2min
+            ["look_around"] = 0.012f,   // reaches 0.6 after ~40s
+            ["explore"] = 0.005f,   // reaches 0.6 after ~2min
             ["greet_companion"] = 0.0f,
-            ["rest"]            = 0.0f,
+            ["rest"] = 0.0f,
         };
 
     private const float TriggerThreshold = 0.6f;
@@ -61,9 +61,9 @@ public sealed class DesireSystem
     public DesireSystem(AgentTextConfig textConfig, ILogger<DesireSystem> logger, string? statePath = null)
     {
         _textConfig = textConfig;
-        _statePath  = statePath ?? DefaultStatePath;
-        _logger     = logger;
-        _desires    = new Dictionary<string, float>(DefaultDesires);
+        _statePath = statePath ?? DefaultStatePath;
+        _logger = logger;
+        _desires = new Dictionary<string, float>(DefaultDesires);
         _lastTickMs = Environment.TickCount64;
         Load();
     }
@@ -111,7 +111,7 @@ public sealed class DesireSystem
     public void Tick()
     {
         var now = Environment.TickCount64;
-        var dt  = (now - _lastTickMs) / 1000.0f;   // ms → seconds
+        var dt = (now - _lastTickMs) / 1000.0f;   // ms → seconds
         _lastTickMs = now;
 
         foreach (var (name, rate) in GrowthRates)

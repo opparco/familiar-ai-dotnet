@@ -8,32 +8,32 @@ using FamiliarAI.Server.Agent.Tools;
 DotNetEnv.Env.Load();
 
 // ---- configuration ----
-var agentName     = Environment.GetEnvironmentVariable("AGENT_NAME")     ?? "Familiar";
+var agentName = Environment.GetEnvironmentVariable("AGENT_NAME") ?? "Familiar";
 var companionName = Environment.GetEnvironmentVariable("COMPANION_NAME") ?? "USER";
-var apiKey        = Environment.GetEnvironmentVariable("API_KEY")        ?? "";
-var platform      = Environment.GetEnvironmentVariable("PLATFORM")       ?? "kimi";
-var model         = Environment.GetEnvironmentVariable("MODEL")          ?? "";
-var baseUrl       = Environment.GetEnvironmentVariable("BASE_URL")       ?? "";
-var host          = Environment.GetEnvironmentVariable("WEB_HOST")       ?? "0.0.0.0";
-var port          = int.TryParse(Environment.GetEnvironmentVariable("WEB_PORT"), out var p) ? p : 5000;
+var apiKey = Environment.GetEnvironmentVariable("API_KEY") ?? "";
+var platform = Environment.GetEnvironmentVariable("PLATFORM") ?? "kimi";
+var model = Environment.GetEnvironmentVariable("MODEL") ?? "";
+var baseUrl = Environment.GetEnvironmentVariable("BASE_URL") ?? "";
+var host = Environment.GetEnvironmentVariable("WEB_HOST") ?? "0.0.0.0";
+var port = int.TryParse(Environment.GetEnvironmentVariable("WEB_PORT"), out var p) ? p : 5000;
 
-var cameraHost     = Environment.GetEnvironmentVariable("CAMERA_HOST")     ?? "";
-var cameraUser     = Environment.GetEnvironmentVariable("CAMERA_USERNAME") ?? "admin";
-var cameraPass     = Environment.GetEnvironmentVariable("CAMERA_PASSWORD") ?? "";
-var cameraPort     = int.TryParse(Environment.GetEnvironmentVariable("CAMERA_PORT"), out var cp) ? cp : 2020;
+var cameraHost = Environment.GetEnvironmentVariable("CAMERA_HOST") ?? "";
+var cameraUser = Environment.GetEnvironmentVariable("CAMERA_USERNAME") ?? "admin";
+var cameraPass = Environment.GetEnvironmentVariable("CAMERA_PASSWORD") ?? "";
+var cameraPort = int.TryParse(Environment.GetEnvironmentVariable("CAMERA_PORT"), out var cp) ? cp : 2020;
 
-var tuyaRegion     = Environment.GetEnvironmentVariable("TUYA_REGION")         ?? "eu";
-var tuyaApiKey     = Environment.GetEnvironmentVariable("TUYA_API_KEY")        ?? "";
-var tuyaApiSecret  = Environment.GetEnvironmentVariable("TUYA_API_SECRET")     ?? "";
-var tuyaDeviceId   = Environment.GetEnvironmentVariable("TUYA_DEVICE_ID")      ?? "";
+var tuyaRegion = Environment.GetEnvironmentVariable("TUYA_REGION") ?? "eu";
+var tuyaApiKey = Environment.GetEnvironmentVariable("TUYA_API_KEY") ?? "";
+var tuyaApiSecret = Environment.GetEnvironmentVariable("TUYA_API_SECRET") ?? "";
+var tuyaDeviceId = Environment.GetEnvironmentVariable("TUYA_DEVICE_ID") ?? "";
 
-var ttsEngine      = Environment.GetEnvironmentVariable("TTS_ENGINE")          ?? "voicevox";
-var voicevoxUrl    = Environment.GetEnvironmentVariable("VOICEVOX_URL")         ?? "http://localhost:50021";
-var voicevoxSpk    = int.TryParse(Environment.GetEnvironmentVariable("VOICEVOX_SPEAKER"), out var vs) ? vs : 3;
-var elevenApiKey   = Environment.GetEnvironmentVariable("ELEVENLABS_API_KEY")   ?? "";
-var elevenVoiceId  = Environment.GetEnvironmentVariable("ELEVENLABS_VOICE_ID")  ?? "";
+var ttsEngine = Environment.GetEnvironmentVariable("TTS_ENGINE") ?? "voicevox";
+var voicevoxUrl = Environment.GetEnvironmentVariable("VOICEVOX_URL") ?? "http://localhost:50021";
+var voicevoxSpk = int.TryParse(Environment.GetEnvironmentVariable("VOICEVOX_SPEAKER"), out var vs) ? vs : 3;
+var elevenApiKey = Environment.GetEnvironmentVariable("ELEVENLABS_API_KEY") ?? "";
+var elevenVoiceId = Environment.GetEnvironmentVariable("ELEVENLABS_VOICE_ID") ?? "";
 
-var config          = new AgentConfig(agentName, companionName, apiKey, platform, model);
+var config = new AgentConfig(agentName, companionName, apiKey, platform, model);
 var agentTextConfig = AgentTextConfig.LoadDefault();
 
 // ---- build ----

@@ -17,7 +17,7 @@ namespace FamiliarAI.Server.Agent.Tools;
 public sealed class RuriEmbedding : IDisposable
 {
     private const string DocumentPrefix = "検索文書: ";
-    private const string QueryPrefix    = "検索クエリ: ";
+    private const string QueryPrefix = "検索クエリ: ";
 
     private readonly InferenceSession _session;
     private readonly SentencePieceTokenizer _tokenizer;
@@ -26,7 +26,7 @@ public sealed class RuriEmbedding : IDisposable
 
     public RuriEmbedding(string modelDir)
     {
-        var modelPath     = Path.Combine(modelDir, "model.onnx");
+        var modelPath = Path.Combine(modelDir, "model.onnx");
         var tokenizerPath = Path.Combine(modelDir, "tokenizer.model");
 
         if (!File.Exists(modelPath))
@@ -54,16 +54,16 @@ public sealed class RuriEmbedding : IDisposable
         => texts.Select(t => GetEmbedding(QueryPrefix + t)).ToArray();
 
     public float[] EncodeDocument(string text) => GetEmbedding(DocumentPrefix + text);
-    public float[] EncodeQuery(string text)    => GetEmbedding(QueryPrefix + text);
+    public float[] EncodeQuery(string text) => GetEmbedding(QueryPrefix + text);
 
     private float[] GetEmbedding(string text)
     {
         IReadOnlyList<int> rawIds = _tokenizer.EncodeToIds(text);
-        long[] inputIds     = new long[rawIds.Count];
+        long[] inputIds = new long[rawIds.Count];
         long[] attentionMask = new long[rawIds.Count];
         for (int i = 0; i < rawIds.Count; i++)
         {
-            inputIds[i]      = rawIds[i];
+            inputIds[i] = rawIds[i];
             attentionMask[i] = 1L;
         }
 

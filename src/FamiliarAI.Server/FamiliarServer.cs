@@ -34,9 +34,9 @@ public sealed class FamiliarServer
 
     public FamiliarServer(IFamiliarAgent agent, ChatLogger chatLogger, ILogger<FamiliarServer> logger)
     {
-        _agent      = agent;
+        _agent = agent;
         _chatLogger = chatLogger;
-        _logger     = logger;
+        _logger = logger;
     }
 
     // ---------------------------------------------------------------
@@ -109,24 +109,24 @@ public sealed class FamiliarServer
         switch (env.Type)
         {
             case "chat":
-            {
-                var message = env.Data?.TryGetProperty("message", out var m) == true
-                    ? m.GetString()?.Trim()
-                    : null;
-
-                if (!string.IsNullOrEmpty(message))
                 {
-                    _chatLogger.LogUserMessage(CompanionName, message);
+                    var message = env.Data?.TryGetProperty("message", out var m) == true
+                        ? m.GetString()?.Trim()
+                        : null;
 
-                    // Broadcast user message to all clients immediately
-                    await BroadcastAsync("user_message", new UserMessageData(CompanionName, message));
+                    if (!string.IsNullOrEmpty(message))
+                    {
+                        _chatLogger.LogUserMessage(CompanionName, message);
 
-                    // Enqueue for agent loop (also acts as mid-turn interrupt)
-                    await InputChannel.Writer.WriteAsync(message);
-                    LastInteractionAt = DateTimeOffset.UtcNow;
+                        // Broadcast user message to all clients immediately
+                        await BroadcastAsync("user_message", new UserMessageData(CompanionName, message));
+
+                        // Enqueue for agent loop (also acts as mid-turn interrupt)
+                        await InputChannel.Writer.WriteAsync(message);
+                        LastInteractionAt = DateTimeOffset.UtcNow;
+                    }
+                    break;
                 }
-                break;
-            }
             case "clear_history":
                 _agent.ClearHistory();
                 await BroadcastAsync("history_cleared", new { });
@@ -151,9 +151,9 @@ public sealed class FamiliarServer
         var callbacks = new TurnCallbacks(
             OnAction: (name, input) =>
             {
-                var icon  = GetActionIcon(name);
+                var icon = GetActionIcon(name);
                 var label = FormatAction(name, input);
-                var data  = new ActionData(name, icon, label, input);
+                var data = new ActionData(name, icon, label, input);
                 actionsLog.Add(data);
                 _chatLogger.LogAction(icon, label);
                 _ = BroadcastAsync("action", data);
@@ -188,7 +188,7 @@ public sealed class FamiliarServer
         var callbacks = new TurnCallbacks(
             OnAction: (name, input) =>
             {
-                var icon  = GetActionIcon(name);
+                var icon = GetActionIcon(name);
                 var label = FormatAction(name, input);
                 _chatLogger.LogAction(icon, label);
                 _ = BroadcastAsync("action", new ActionData(name, icon, label, input));
@@ -264,17 +264,17 @@ public sealed class FamiliarServer
 
     private static string GetActionIcon(string name) => name switch
     {
-        "see"        => "👀",
-        "look_left"  => "◀️",
+        "see" => "👀",
+        "look_left" => "◀️",
         "look_right" => "▶️",
-        "look_up"    => "🔼",
-        "look_down"  => "🔽",
-        "look_around"=> "🔄",
-        "walk"       => "🚶",
-        "say"        => "💬",
-        "recall"     => "🧠",
-        "remember"   => "📝",
-        _            => "⚙️",
+        "look_up" => "🔼",
+        "look_down" => "🔽",
+        "look_around" => "🔄",
+        "walk" => "🚶",
+        "say" => "💬",
+        "recall" => "🧠",
+        "remember" => "📝",
+        _ => "⚙️",
     };
 
     private static string FormatAction(string name, Dictionary<string, object?> input)

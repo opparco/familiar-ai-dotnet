@@ -11,11 +11,11 @@ namespace FamiliarAI.Server.Agent.Tools;
 public sealed class MemoryTool
 {
     private readonly ObservationMemory _store;
-    private readonly AgentTextConfig   _agentText;
+    private readonly AgentTextConfig _agentText;
 
     public MemoryTool(ObservationMemory store, AgentTextConfig agentText)
     {
-        _store     = store;
+        _store = store;
         _agentText = agentText;
     }
 
@@ -82,13 +82,13 @@ public sealed class MemoryTool
         if (toolName == "recall")
         {
             var query = input["query"]?.GetValue<string>() ?? "";
-            var n     = input["n"]?.GetValue<int>() ?? 3;
-            var mems  = await _store.RecallAsync(query, n);
+            var n = input["n"]?.GetValue<int>() ?? 3;
+            var mems = await _store.RecallAsync(query, n);
             if (mems.Count == 0) return ("No relevant memories found.", null);
 
             var lines = mems.Select(m =>
             {
-                var score   = m.Score.HasValue ? $" ({m.Score:F2})" : "";
+                var score = m.Score.HasValue ? $" ({m.Score:F2})" : "";
                 var emotion = m.Emotion is not ("neutral" or "") ? $" [{m.Emotion}]" : "";
                 return $"- {m.Date} {m.Time}{score}{emotion}: {m.Content[..Math.Min(120, m.Content.Length)]}";
             });

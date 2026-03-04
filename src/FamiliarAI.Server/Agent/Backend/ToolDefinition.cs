@@ -17,9 +17,9 @@ public sealed record ToolDefinition(
         ["type"] = "function",
         ["function"] = new JsonObject
         {
-            ["name"]        = Name,
+            ["name"] = Name,
             ["description"] = Description,
-            ["parameters"]  = InputSchema.DeepClone(),
+            ["parameters"] = InputSchema.DeepClone(),
         },
     };
 }
