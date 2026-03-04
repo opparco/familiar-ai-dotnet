@@ -115,40 +115,40 @@ public sealed class AnthropicBackend : ILlmBackend, IDisposable
             switch (type)
             {
                 case "content_block_start":
-                {
-                    if (!root.TryGetProperty("index", out var idxEl)) break;
-                    var idx = idxEl.GetInt32();
-                    if (!root.TryGetProperty("content_block", out var cb)) break;
-                    var cbType = cb.TryGetProperty("type", out var cbt) ? cbt.GetString() : null;
-                    if (cbType == "text")
-                        textByIndex[idx] = new StringBuilder();
-                    else if (cbType == "tool_use")
-                        toolByIndex[idx] = new ToolUseAccum
-                        {
-                            Id = cb.TryGetProperty("id", out var idEl) ? idEl.GetString() ?? "" : "",
-                            Name = cb.TryGetProperty("name", out var nameEl) ? nameEl.GetString() ?? "" : "",
-                        };
-                    break;
-                }
+                    {
+                        if (!root.TryGetProperty("index", out var idxEl)) break;
+                        var idx = idxEl.GetInt32();
+                        if (!root.TryGetProperty("content_block", out var cb)) break;
+                        var cbType = cb.TryGetProperty("type", out var cbt) ? cbt.GetString() : null;
+                        if (cbType == "text")
+                            textByIndex[idx] = new StringBuilder();
+                        else if (cbType == "tool_use")
+                            toolByIndex[idx] = new ToolUseAccum
+                            {
+                                Id = cb.TryGetProperty("id", out var idEl) ? idEl.GetString() ?? "" : "",
+                                Name = cb.TryGetProperty("name", out var nameEl) ? nameEl.GetString() ?? "" : "",
+                            };
+                        break;
+                    }
                 case "content_block_delta":
-                {
-                    if (!root.TryGetProperty("index", out var idxEl)) break;
-                    var idx = idxEl.GetInt32();
-                    if (!root.TryGetProperty("delta", out var delta)) break;
-                    var deltaType = delta.TryGetProperty("type", out var dt) ? dt.GetString() : null;
+                    {
+                        if (!root.TryGetProperty("index", out var idxEl)) break;
+                        var idx = idxEl.GetInt32();
+                        if (!root.TryGetProperty("delta", out var delta)) break;
+                        var deltaType = delta.TryGetProperty("type", out var dt) ? dt.GetString() : null;
 
-                    if (deltaType == "text_delta" && textByIndex.TryGetValue(idx, out var sb))
-                    {
-                        var chunk = delta.TryGetProperty("text", out var textEl) ? textEl.GetString() ?? "" : "";
-                        sb.Append(chunk);
-                        onText?.Invoke(chunk);
+                        if (deltaType == "text_delta" && textByIndex.TryGetValue(idx, out var sb))
+                        {
+                            var chunk = delta.TryGetProperty("text", out var textEl) ? textEl.GetString() ?? "" : "";
+                            sb.Append(chunk);
+                            onText?.Invoke(chunk);
+                        }
+                        else if (deltaType == "input_json_delta" && toolByIndex.TryGetValue(idx, out var tua))
+                        {
+                            tua.PartialJson += delta.TryGetProperty("partial_json", out var pj) ? pj.GetString() ?? "" : "";
+                        }
+                        break;
                     }
-                    else if (deltaType == "input_json_delta" && toolByIndex.TryGetValue(idx, out var tua))
-                    {
-                        tua.PartialJson += delta.TryGetProperty("partial_json", out var pj) ? pj.GetString() ?? "" : "";
-                    }
-                    break;
-                }
                 case "message_delta":
                     if (root.TryGetProperty("delta", out var msgDelta) &&
                         msgDelta.TryGetProperty("stop_reason", out var sr) &&
