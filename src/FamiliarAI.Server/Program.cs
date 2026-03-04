@@ -56,6 +56,10 @@ builder.Services.AddSingleton<IFamiliarAgent>(sp =>
 
     ILlmBackend backend = platform.ToLower() switch
     {
+        "anthropic" => new AnthropicBackend(
+            apiKey,
+            string.IsNullOrEmpty(model) ? "claude-sonnet-4-6" : model,
+            sp.GetRequiredService<ILogger<AnthropicBackend>>()),
         "openai" => new OpenAICompatibleBackend(
             apiKey,
             string.IsNullOrEmpty(model) ? "local-model" : model,
@@ -158,9 +162,12 @@ Console.WriteLine();
 Console.WriteLine($"  familiar-ai  [{agentName}]");
 Console.WriteLine($"  Web UI    : http://{host}:{port}/");
 Console.WriteLine($"  WebSocket : ws://{host}:{port}/ws");
-var effectiveBaseUrl = platform.ToLower() is "openai"
-    ? (string.IsNullOrEmpty(baseUrl) ? "http://localhost:1234/v1" : baseUrl)
-    : "https://api.moonshot.ai/v1";
+var effectiveBaseUrl = platform.ToLower() switch
+{
+    "anthropic" => "https://api.anthropic.com/v1",
+    "openai" => string.IsNullOrEmpty(baseUrl) ? "http://localhost:1234/v1" : baseUrl,
+    _ => "https://api.moonshot.ai/v1",
+};
 Console.WriteLine($"  Platform  : {platform}{(string.IsNullOrEmpty(apiKey) ? " (no API key → stub)" : "")} — {effectiveBaseUrl}");
 Console.WriteLine($"  Camera    : {(string.IsNullOrEmpty(cameraHost) ? "not configured" : $"{cameraHost}:{cameraPort} (ONVIF)")}");
 Console.WriteLine($"  TTS       : {ttsEngine.ToLower()}{(ttsEngine.ToLower() == "voicevox" ? $" (speaker {voicevoxSpk}, {voicevoxUrl})" : "")}");

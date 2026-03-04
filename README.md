@@ -5,7 +5,7 @@ A port of the Python `src/familiar_agent/` stack.
 
 ## What it does
 
-- Runs a **ReAct loop** (THINK → ACT → OBSERVE) powered by a pluggable LLM backend (Kimi / OpenAI-compatible)
+- Runs a **ReAct loop** (THINK → ACT → OBSERVE) powered by a pluggable LLM backend (Kimi / Anthropic / OpenAI-compatible)
 - **Sees** the world through an ONVIF/RTSP Wi-Fi camera (Tapo C220 or compatible)
 - **Speaks** via VOICEVOX (local, Japanese-optimised) or ElevenLabs (cloud)
 - **Remembers** using SQLite + ruri-v3 ONNX vector embeddings
@@ -108,9 +108,9 @@ TTS_ENGINE=voicevox
 | Variable | Default | Description |
 |---|---|---|
 | `API_KEY` | *(required)* | API key for the chosen platform. Without this the server runs as `StubAgent` (echoes text, no LLM). |
-| `PLATFORM` | `kimi` | LLM backend: `kimi` (Moonshot AI) or `openai` (OpenAI-compatible: Ollama, vLLM, LM Studio, …). |
-| `BASE_URL` | *(see below)* | Base URL for the LLM API. Default: `https://api.moonshot.ai/v1` for kimi; `http://localhost:11434/v1` for Ollama, `http://localhost:8000/v1` for vLLM. |
-| `MODEL` | `kimi-k2.5` | Model name. Use the model tag as shown in the backend (e.g. `llama3.2` for Ollama); default is `local-model`. |
+| `PLATFORM` | `kimi` | LLM backend: `kimi` (Moonshot AI), `anthropic` (Anthropic), or `openai` (OpenAI-compatible: Ollama, vLLM, LM Studio, …). |
+| `BASE_URL` | *(see below)* | Base URL for the LLM API. Ignored for `anthropic`. Default: `https://api.moonshot.ai/v1` for kimi; `http://localhost:11434/v1` for Ollama, `http://localhost:8000/v1` for vLLM. |
+| `MODEL` | *(per platform)* | Model name. Defaults: `kimi-k2.5` (kimi), `claude-sonnet-4-6` (anthropic), `local-model` (openai). |
 | `AGENT_NAME` | `Familiar` | Agent's display name |
 | `COMPANION_NAME` | `USER` | Human's display name |
 | `WEB_HOST` | `0.0.0.0` | Bind address |
@@ -242,7 +242,7 @@ Program.cs
                      AgentLoopService          (background loop)
                            │  user turn / desire turn
                      EmbodiedAgent             (ReAct loop, TAPE planning)
-                        ├── ILlmBackend        (KimiBackend | OpenAICompatibleBackend)
+                        ├── ILlmBackend        (KimiBackend | AnthropicBackend | OpenAICompatibleBackend)
                         ├── ObservationMemory  (SQLite + ruri-v3 vectors)
                         ├── MemoryTool         (remember / recall)
                         ├── TomTool            (Theory of Mind)
@@ -304,7 +304,7 @@ It shares the same WebSocket protocol, memory database schema, and prompt files,
 so a frontend written for the Python server works with this one unchanged.
 
 Key differences:
-- LLM backend: **Kimi** (default) or any **OpenAI-compatible** endpoint (Python also supports Anthropic / Gemini)
+- LLM backend: **Kimi** (default), **Anthropic**, or any **OpenAI-compatible** endpoint (Python also supports Gemini)
 - No TUI or REPL — WebSocket server only
 - Embedding model: **ruri-v3 ONNX** (Python uses `multilingual-e5-small` via torch)
 - Mobility backend: **Tuya Cloud API** (Python uses `tinytuya` library directly)
