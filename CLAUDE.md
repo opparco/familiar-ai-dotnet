@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project overview
 
-ASP.NET Core 9 WebSocket server — a .NET port of the Python `familiar_agent` stack. Runs a ReAct + TAPE planning loop powered by Kimi (Moonshot AI), with SQLite + ruri-v3 ONNX vector memory, ONVIF/RTSP camera vision, VOICEVOX/ElevenLabs TTS, Tuya Cloud mobility, and an autonomous desire system.
+ASP.NET Core 9 WebSocket server — a .NET port of the Python `familiar_agent` stack. Runs a ReAct + TAPE planning loop powered by Kimi (Moonshot AI), Anthropic, or any OpenAI-compatible backend, with SQLite + ruri-v3 ONNX vector memory, ONVIF/RTSP camera vision, VOICEVOX/ElevenLabs TTS, Tuya Cloud mobility, and an autonomous desire system.
 
 ## Build & run commands
 
@@ -30,9 +30,9 @@ All config is via environment variables. A `.env` file in the working directory 
 | Variable | Default | Notes |
 |---|---|---|
 | `API_KEY` | *(required)* | API key for the chosen platform. Without it → `StubAgent`. |
-| `PLATFORM` | `kimi` | `kimi` — Moonshot AI; `openai` — OpenAI-compatible (e.g. Ollama, vLLM, LM Studio). |
-| `BASE_URL` | *(see below)* | Base URL for the LLM API. Default: `https://api.moonshot.ai/v1` for kimi; `http://localhost:11434/v1` for Ollama, `http://localhost:8000/v1` for vLLM. |
-| `MODEL` | `kimi-k2.5` | Model name. Use the model tag as shown in the backend (e.g. `llama3.2` for Ollama). |
+| `PLATFORM` | `kimi` | `kimi` — Moonshot AI; `anthropic` — Anthropic Messages API; `openai` — OpenAI-compatible (e.g. Ollama, vLLM, LM Studio). |
+| `BASE_URL` | *(see below)* | Base URL for the LLM API. Ignored for `anthropic`. Default: `https://api.moonshot.ai/v1` for kimi; `http://localhost:11434/v1` for Ollama, `http://localhost:8000/v1` for vLLM. |
+| `MODEL` | *(per platform)* | Model name. Defaults: `kimi-k2.5` (kimi), `claude-sonnet-4-6` (anthropic), `local-model` (openai). |
 | `AGENT_NAME` | `Familiar` | |
 | `COMPANION_NAME` | `USER` | |
 | `WEB_HOST` / `WEB_PORT` | `0.0.0.0` / `5000` | |
@@ -50,7 +50,9 @@ Program.cs (DI composition root)
         └── FamiliarServer           — WebSocket session manager; broadcast hub; InputChannel queue
               └── AgentLoopService   — BackgroundService; consumes InputChannel; fires desire turns
                     └── EmbodiedAgent — ReAct loop (max 50 iter), TAPE planning, post-turn memory
-                          ├── KimiBackend        — Moonshot AI SSE streaming + CompleteAsync
+                          ├── KimiBackend        — Moonshot AI SSE streaming + CompleteAsync (reasoning_content round-trip)
+                          ├── AnthropicBackend   — Anthropic Messages API native SSE streaming
+                          ├── OpenAICompatibleBackend — any OpenAI-compatible endpoint
                           ├── ObservationMemory  — SQLite + ruri-v3 vectors
                           ├── MemoryTool         — remember / recall
                           ├── TomTool            — Theory of Mind scaffold
@@ -70,9 +72,11 @@ Each call to `RunAsync()`:
 5. **Adaptive replanning** — after each tool result, checks if the plan is blocked; if so, calls `CompleteAsync` for a revised step appended to the tool result text.
 6. **Post-turn memory saves** (fire-and-forget) — infer emotion, summarise exchange, update self-model on emotional turns.
 
-### KimiBackend quirk
+### Backend quirks
 
-Kimi returns `reasoning_content` (thinking tokens) in assistant messages. This field **must be round-tripped** back on subsequent turns that include tool calls or the API rejects the request with `"reasoning_content is missing"`. `StreamTurnAsync` captures it and includes it in the returned `rawAssistant` `JsonObject`.
+**KimiBackend:** Kimi returns `reasoning_content` (thinking tokens) in assistant messages. This field **must be round-tripped** back on subsequent turns that include tool calls or the API rejects the request with `"reasoning_content is missing"`. `StreamTurnAsync` captures it and includes it in the returned `rawAssistant` `JsonObject`.
+
+**AnthropicBackend:** Uses the native Anthropic Messages API (`https://api.anthropic.com/v1/messages`, `anthropic-version: 2023-06-01`). `TranslateHistory()` converts the agent's OpenAI-format history (tool results as `role:"tool"`, tool calls as `tool_calls` array) to Anthropic format (tool results as user messages with `tool_result` content blocks, tool calls as `tool_use` content blocks) before each request. `BASE_URL` is ignored — the endpoint is hardcoded.
 
 ### Tool interface pattern
 
