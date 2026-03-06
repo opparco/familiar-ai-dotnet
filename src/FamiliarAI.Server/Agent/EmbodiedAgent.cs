@@ -22,9 +22,9 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
     private readonly ObservationMemory _memory;
     private readonly MemoryTool _memoryTool;
     private readonly TomTool _tomTool;
-    private readonly CameraTool? _camera;
-    private readonly TtsTool? _tts;
-    private readonly MobilityTool? _mobility;
+    private readonly CameraTool? _cameraTool;
+    private readonly TtsTool? _ttsTool;
+    private readonly MobilityTool? _mobilityTool;
     private readonly ILogger<EmbodiedAgent> _logger;
 
     // Prompt templates (loaded once at startup)
@@ -55,9 +55,9 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
         ILlmBackend backend,
         ObservationMemory memory,
         ILogger<EmbodiedAgent> logger,
-        CameraTool? camera = null,
-        TtsTool? tts = null,
-        MobilityTool? mobility = null)
+        CameraTool? cameraTool = null,
+        TtsTool? ttsTool = null,
+        MobilityTool? mobilityTool = null)
     {
         AgentName = config.AgentName;
         CompanionName = config.CompanionName;
@@ -65,16 +65,16 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
         _backend = backend;
         _memory = memory;
         _logger = logger;
-        _camera = camera;
-        _tts = tts;
-        _mobility = mobility;
+        _cameraTool = cameraTool;
+        _ttsTool = ttsTool;
+        _mobilityTool = mobilityTool;
         _memoryTool = new MemoryTool(memory, agentText);
 
         var macros = new Dictionary<string, bool>
         {
-            ["tool_use.camera"]   = camera is not null,
-            ["tool_use.tts"]      = tts is not null,
-            ["tool_use.mobility"] = mobility is not null,
+            ["tool_use.camera"]   = cameraTool is not null,
+            ["tool_use.tts"]      = ttsTool is not null,
+            ["tool_use.mobility"] = mobilityTool is not null,
         };
 
         var promptDir = ResolvePromptDir();
@@ -150,9 +150,9 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
         // ── Build tool list ───────────────────────────────────────────
         var tools = _memoryTool.GetToolDefinitions().ToList();
         tools.AddRange(_tomTool.GetToolDefinitions());
-        if (_camera is not null) tools.AddRange(_camera.GetToolDefinitions());
-        if (_tts is not null) tools.AddRange(_tts.GetToolDefinitions());
-        if (_mobility is not null) tools.AddRange(_mobility.GetToolDefinitions());
+        if (_cameraTool is not null) tools.AddRange(_cameraTool.GetToolDefinitions());
+        if (_ttsTool is not null) tools.AddRange(_ttsTool.GetToolDefinitions());
+        if (_mobilityTool is not null) tools.AddRange(_mobilityTool.GetToolDefinitions());
 
         // ── ReAct loop ────────────────────────────────────────────────
         bool cameraUsed = false;
@@ -291,14 +291,14 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
         if (name == "tom")
             return _tomTool.CallAsync(name, input, ct);
 
-        if (name is "see" or "look" && _camera is not null)
-            return _camera.CallAsync(name, input, ct);
+        if (name is "see" or "look" && _cameraTool is not null)
+            return _cameraTool.CallAsync(name, input, ct);
 
-        if (name == "say" && _tts is not null)
-            return _tts.CallAsync(name, input, ct);
+        if (name == "say" && _ttsTool is not null)
+            return _ttsTool.CallAsync(name, input, ct);
 
-        if (name == "walk" && _mobility is not null)
-            return _mobility.CallAsync(name, input, ct);
+        if (name == "walk" && _mobilityTool is not null)
+            return _mobilityTool.CallAsync(name, input, ct);
 
         return Task.FromResult<(string, string?)>(
             ($"Tool '{name}' not available in this configuration.", null));
@@ -443,9 +443,9 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
         if (string.IsNullOrWhiteSpace(userInput)) return "";
         var allDefs = _memoryTool.GetToolDefinitions()
             .Concat(_tomTool.GetToolDefinitions())
-            .Concat(_camera?.GetToolDefinitions() ?? [])
-            .Concat(_tts?.GetToolDefinitions() ?? [])
-            .Concat(_mobility?.GetToolDefinitions() ?? []);
+            .Concat(_cameraTool?.GetToolDefinitions() ?? [])
+            .Concat(_ttsTool?.GetToolDefinitions() ?? [])
+            .Concat(_mobilityTool?.GetToolDefinitions() ?? []);
         var toolNames = string.Join(", ", allDefs.Select(t => t.Name));
         var prompt = _tapePlanTemplate
             .Replace("{tools}", toolNames)
@@ -567,9 +567,9 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
     public void Dispose()
     {
         _memory.Dispose();
-        _camera?.Dispose();
-        _tts?.Dispose();
-        _mobility?.Dispose();
+        _cameraTool?.Dispose();
+        _ttsTool?.Dispose();
+        _mobilityTool?.Dispose();
     }
 }
 

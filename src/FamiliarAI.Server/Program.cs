@@ -90,41 +90,41 @@ builder.Services.AddSingleton<IFamiliarAgent>(sp =>
     var memory = new ObservationMemory(embedder, sp.GetRequiredService<ILogger<ObservationMemory>>());
 
     // Camera (optional — only added when CAMERA_HOST is set and connection test passes)
-    CameraTool? camera = null;
+    CameraTool? cameraTool = null;
     if (!string.IsNullOrEmpty(cameraHost))
     {
         var cam = new CameraTool(
             cameraHost, cameraUser, cameraPass, cameraPort,
             sp.GetRequiredService<ILogger<CameraTool>>());
         if (cam.CheckAsync().GetAwaiter().GetResult())
-            camera = cam;
+            cameraTool = cam;
         else
             cam.Dispose();
     }
 
     // TTS (optional — only added when engine is reachable)
-    TtsTool? tts = null;
+    TtsTool? ttsTool = null;
     {
         ITtsEngine ttsEngineImpl = ttsEngine.ToLower() == "elevenlabs" && !string.IsNullOrEmpty(elevenApiKey)
             ? new ElevenLabsEngine(elevenApiKey, elevenVoiceId)
             : new VoicevoxEngine(voicevoxUrl, voicevoxSpk);
-        var ttsTool = new TtsTool(ttsEngineImpl, sp.GetRequiredService<ILogger<TtsTool>>());
-        if (ttsTool.CheckAsync().GetAwaiter().GetResult())
+        var tts = new TtsTool(ttsEngineImpl, sp.GetRequiredService<ILogger<TtsTool>>());
+        if (tts.CheckAsync().GetAwaiter().GetResult())
         {
-            tts = ttsTool;
+            ttsTool = tts;
             sp.GetRequiredService<ILogger<TtsTool>>()
-              .LogInformation("TTS engine: {Engine}", tts.EngineName);
+              .LogInformation("TTS engine: {Engine}", ttsTool.EngineName);
         }
         else
         {
-            ttsTool.Dispose();
+            tts.Dispose();
             sp.GetRequiredService<ILogger<TtsTool>>()
               .LogWarning("TTS engine {Engine} unavailable — say tool disabled", ttsEngine.ToLower());
         }
     }
 
     // Mobility (optional — only added when TUYA_API_KEY is set and token fetch succeeds)
-    MobilityTool? mobility = null;
+    MobilityTool? mobilityTool = null;
     if (!string.IsNullOrEmpty(tuyaApiKey) && !string.IsNullOrEmpty(tuyaDeviceId))
     {
         var mob = new MobilityTool(
@@ -132,7 +132,7 @@ builder.Services.AddSingleton<IFamiliarAgent>(sp =>
             sp.GetRequiredService<ILogger<MobilityTool>>());
         if (mob.CheckAsync().GetAwaiter().GetResult())
         {
-            mobility = mob;
+            mobilityTool = mob;
             sp.GetRequiredService<ILogger<MobilityTool>>()
               .LogInformation("Mobility configured: device={DeviceId} region={Region}", tuyaDeviceId, tuyaRegion);
         }
@@ -142,7 +142,7 @@ builder.Services.AddSingleton<IFamiliarAgent>(sp =>
         }
     }
 
-    return new EmbodiedAgent(config, agentTextConfig, backend, memory, sp.GetRequiredService<ILogger<EmbodiedAgent>>(), camera, tts, mobility);
+    return new EmbodiedAgent(config, agentTextConfig, backend, memory, sp.GetRequiredService<ILogger<EmbodiedAgent>>(), cameraTool, ttsTool, mobilityTool);
 });
 
 builder.Services.AddSingleton(agentTextConfig);
