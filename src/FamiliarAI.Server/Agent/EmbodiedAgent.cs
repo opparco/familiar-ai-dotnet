@@ -70,8 +70,16 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
         _mobility = mobility;
         _memoryTool = new MemoryTool(memory, agentText);
 
+        var macros = new Dictionary<string, bool>
+        {
+            ["tool_use.camera"]   = camera is not null,
+            ["tool_use.tts"]      = tts is not null,
+            ["tool_use.mobility"] = mobility is not null,
+        };
+
         var promptDir = ResolvePromptDir();
-        _systemTemplate = File.ReadAllText(Path.Combine(promptDir, "system.md"));
+        _systemTemplate = PreprocessTemplate(
+            File.ReadLines(Path.Combine(promptDir, "system.md")), macros);
         _emotionTemplate = File.ReadAllText(Path.Combine(promptDir, "emotion.md"));
         _summaryTemplate = File.ReadAllText(Path.Combine(promptDir, "summary.md"));
         _selfModelTemplate = File.ReadAllText(Path.Combine(promptDir, "self_model.md"));
@@ -507,6 +515,37 @@ public sealed class EmbodiedAgent : IFamiliarAgent, IDisposable
                 try { return File.ReadAllText(path, System.Text.Encoding.UTF8).Trim(); }
                 catch { }
         return "";
+    }
+
+    // ---------------------------------------------------------------
+    // System prompt preprocessor
+    // ---------------------------------------------------------------
+
+    /// <summary>
+    /// Evaluates <c>!if key</c> / <c>!endif</c> directives.
+    /// Lines inside a false block are dropped; directive lines are always dropped.
+    /// </summary>
+    private static string PreprocessTemplate(IEnumerable<string> lines, IReadOnlyDictionary<string, bool> macros)
+    {
+        var sb = new System.Text.StringBuilder();
+        bool include = true;
+        foreach (var line in lines)
+        {
+            var trimmed = line.TrimStart();
+            if (trimmed.StartsWith("!if "))
+            {
+                include = macros.TryGetValue(trimmed[4..].Trim(), out var val) && val;
+                continue;
+            }
+            if (trimmed.StartsWith("!endif"))
+            {
+                include = true;
+                continue;
+            }
+            if (include)
+                sb.Append(line).Append('\n');
+        }
+        return sb.ToString().TrimEnd('\n', '\r');
     }
 
     private static string ResolveDir(string name)
