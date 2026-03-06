@@ -188,6 +188,8 @@ public sealed class CameraTool : IDisposable
     // ONVIF PTZ (RelativeMove)
     // ---------------------------------------------------------------
 
+    public Task<bool> CheckAsync(CancellationToken ct = default) => EnsureConnectedAsync(ct);
+
     private async Task<bool> EnsureConnectedAsync(CancellationToken ct)
     {
         if (_profileToken is not null && _ptzUrl is not null) return true;

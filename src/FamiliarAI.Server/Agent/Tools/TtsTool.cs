@@ -26,6 +26,9 @@ public sealed class TtsTool : IDisposable
 
     public string EngineName => _engine.EngineName;
 
+    public Task<bool> CheckAsync(CancellationToken ct = default)
+        => Task.FromResult(_engine.IsAvailable());
+
     public TtsTool(ITtsEngine engine, ILogger<TtsTool> logger)
     {
         _engine = engine;

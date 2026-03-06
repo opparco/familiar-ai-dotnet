@@ -92,6 +92,12 @@ public sealed class MobilityTool : IDisposable
             }),
     ];
 
+    public async Task<bool> CheckAsync(CancellationToken ct = default)
+    {
+        try { await GetTokenAsync(ct); return true; }
+        catch (Exception ex) { _logger.LogWarning("Mobility connection test failed: {Ex}", ex.Message); return false; }
+    }
+
     public async Task<(string text, string? image)> CallAsync(
         string toolName, JsonObject input, CancellationToken ct = default)
     {

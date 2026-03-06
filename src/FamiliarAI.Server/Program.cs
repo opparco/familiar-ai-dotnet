@@ -89,34 +89,57 @@ builder.Services.AddSingleton<IFamiliarAgent>(sp =>
 
     var memory = new ObservationMemory(embedder, sp.GetRequiredService<ILogger<ObservationMemory>>());
 
-    // Camera (optional — only constructed when CAMERA_HOST is set)
+    // Camera (optional — only added when CAMERA_HOST is set and connection test passes)
     CameraTool? camera = null;
     if (!string.IsNullOrEmpty(cameraHost))
     {
-        camera = new CameraTool(
+        var cam = new CameraTool(
             cameraHost, cameraUser, cameraPass, cameraPort,
             sp.GetRequiredService<ILogger<CameraTool>>());
-        sp.GetRequiredService<ILogger<CameraTool>>()
-          .LogInformation("Camera configured: {Host}:{Port}", cameraHost, cameraPort);
+        if (cam.CheckAsync().GetAwaiter().GetResult())
+            camera = cam;
+        else
+            cam.Dispose();
     }
 
-    // TTS
-    ITtsEngine ttsEngineImpl = ttsEngine.ToLower() == "elevenlabs" && !string.IsNullOrEmpty(elevenApiKey)
-        ? new ElevenLabsEngine(elevenApiKey, elevenVoiceId)
-        : new VoicevoxEngine(voicevoxUrl, voicevoxSpk);
-    var tts = new TtsTool(ttsEngineImpl, sp.GetRequiredService<ILogger<TtsTool>>());
-    sp.GetRequiredService<ILogger<TtsTool>>()
-      .LogInformation("TTS engine: {Engine}", tts.EngineName);
+    // TTS (optional — only added when engine is reachable)
+    TtsTool? tts = null;
+    {
+        ITtsEngine ttsEngineImpl = ttsEngine.ToLower() == "elevenlabs" && !string.IsNullOrEmpty(elevenApiKey)
+            ? new ElevenLabsEngine(elevenApiKey, elevenVoiceId)
+            : new VoicevoxEngine(voicevoxUrl, voicevoxSpk);
+        var ttsTool = new TtsTool(ttsEngineImpl, sp.GetRequiredService<ILogger<TtsTool>>());
+        if (ttsTool.CheckAsync().GetAwaiter().GetResult())
+        {
+            tts = ttsTool;
+            sp.GetRequiredService<ILogger<TtsTool>>()
+              .LogInformation("TTS engine: {Engine}", tts.EngineName);
+        }
+        else
+        {
+            ttsTool.Dispose();
+            sp.GetRequiredService<ILogger<TtsTool>>()
+              .LogWarning("TTS engine {Engine} unavailable — say tool disabled", ttsEngine.ToLower());
+        }
+    }
 
-    // Mobility (optional — only constructed when TUYA_API_KEY is set)
+    // Mobility (optional — only added when TUYA_API_KEY is set and token fetch succeeds)
     MobilityTool? mobility = null;
     if (!string.IsNullOrEmpty(tuyaApiKey) && !string.IsNullOrEmpty(tuyaDeviceId))
     {
-        mobility = new MobilityTool(
+        var mob = new MobilityTool(
             tuyaRegion, tuyaApiKey, tuyaApiSecret, tuyaDeviceId,
             sp.GetRequiredService<ILogger<MobilityTool>>());
-        sp.GetRequiredService<ILogger<MobilityTool>>()
-          .LogInformation("Mobility configured: device={DeviceId} region={Region}", tuyaDeviceId, tuyaRegion);
+        if (mob.CheckAsync().GetAwaiter().GetResult())
+        {
+            mobility = mob;
+            sp.GetRequiredService<ILogger<MobilityTool>>()
+              .LogInformation("Mobility configured: device={DeviceId} region={Region}", tuyaDeviceId, tuyaRegion);
+        }
+        else
+        {
+            mob.Dispose();
+        }
     }
 
     return new EmbodiedAgent(config, agentTextConfig, backend, memory, sp.GetRequiredService<ILogger<EmbodiedAgent>>(), camera, tts, mobility);
