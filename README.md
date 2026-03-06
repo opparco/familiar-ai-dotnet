@@ -129,7 +129,7 @@ TTS_ENGINE=voicevox
 
 Camera uses RTSP `rtsp://{user}:{pass}@{host}:554/stream1` for frame capture.
 
-### TTS
+### TTS (optional)
 
 | Variable | Default | Description |
 |---|---|---|
