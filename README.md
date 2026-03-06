@@ -48,10 +48,12 @@ The server prints a banner and starts listening:
 
 ```
   familiar-ai  [Familiar]
+  Web UI    : http://0.0.0.0:5000/
   WebSocket : ws://0.0.0.0:5000/ws
-  Platform  : kimi
-  Camera    : not configured
+  Platform  : kimi — https://api.moonshot.ai/v1
+  Camera    : 192.168.1.100:2020 (ONVIF)
   TTS       : voicevox (speaker 3, http://localhost:50021)
+  Mobility  : Tuya EU device=your-dev…
   Chat log  : C:\Users\yourname\.familiar_ai\chat.log
   Press Ctrl+C to stop
 ```
