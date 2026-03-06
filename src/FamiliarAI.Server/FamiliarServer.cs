@@ -151,11 +151,9 @@ public sealed class FamiliarServer
         var callbacks = new TurnCallbacks(
             OnAction: (name, input) =>
             {
-                var icon = GetActionIcon(name);
-                var label = FormatAction(name, input);
-                var data = new ActionData(name, icon, label, input);
+                var data = BuildActionData(name, input);
                 actionsLog.Add(data);
-                _chatLogger.LogAction(icon, label);
+                _chatLogger.LogAction(data.Icon, data.Label);
                 _ = BroadcastAsync("action", data);
             },
             OnText: chunk =>
@@ -188,10 +186,9 @@ public sealed class FamiliarServer
         var callbacks = new TurnCallbacks(
             OnAction: (name, input) =>
             {
-                var icon = GetActionIcon(name);
-                var label = FormatAction(name, input);
-                _chatLogger.LogAction(icon, label);
-                _ = BroadcastAsync("action", new ActionData(name, icon, label, input));
+                var data = BuildActionData(name, input);
+                _chatLogger.LogAction(data.Icon, data.Label);
+                _ = BroadcastAsync("action", data);
             },
             OnText: chunk =>
             {
@@ -259,40 +256,39 @@ public sealed class FamiliarServer
     }
 
     // ---------------------------------------------------------------
-    // Action formatting  (mirrors aio_server.py)
+    // Action formatting  (data-driven; mirrors aio_server.py)
     // ---------------------------------------------------------------
 
-    private static string GetActionIcon(string name) => name switch
+    private sealed record ActionDisplay(string Icon, Func<string, Dictionary<string, object?>, string> Format);
+
+    private static readonly IReadOnlyDictionary<string, ActionDisplay> ActionDisplays = new Dictionary<string, ActionDisplay>(StringComparer.Ordinal)
     {
-        "see" => "👀",
-        "look_left" => "◀️",
-        "look_right" => "▶️",
-        "look_up" => "🔼",
-        "look_down" => "🔽",
-        "look_around" => "🔄",
-        "walk" => "🚶",
-        "say" => "💬",
-        "recall" => "🧠",
-        "remember" => "📝",
-        _ => "⚙️",
+        ["look"] = new("👀", (_, i) =>
+        {
+            var dir = i.GetValueOrDefault("direction") ?? "around";
+            return $"{dir}";
+        }),
+        ["walk"] = new("🚶", (_, i) =>
+        {
+            var dir = i.GetValueOrDefault("direction") ?? "?";
+            var dur = i.GetValueOrDefault("duration");
+            return dur is not null ? $"{dir} {dur}s" : $"{dir}";
+        }),
+        ["say"] = new("💬", (_, i) =>
+        {
+            var text = i.GetValueOrDefault("text")?.ToString() ?? "";
+            return $"「{text[..Math.Min(50, text.Length)]}…」";
+        }),
+        ["recall"] = new("💭", (n, _) => n),
+        ["remember"] = new("📝", (n, _) => n),
     };
 
-    private static string FormatAction(string name, Dictionary<string, object?> input)
+    private const string DefaultActionIcon = "⚙️";
+
+    private static ActionData BuildActionData(string name, Dictionary<string, object?> input)
     {
-        if (name is "look_left" or "look_right" or "look_up" or "look_down")
-            return $"{name}({input.GetValueOrDefault("degrees")}°)";
-        if (name == "say")
-        {
-            var text = input.GetValueOrDefault("text")?.ToString() ?? "";
-            return $"「{text[..Math.Min(50, text.Length)]}…」";
-        }
-        if (name == "walk")
-        {
-            var dir = input.GetValueOrDefault("direction") ?? "?";
-            var dur = input.GetValueOrDefault("duration");
-            return dur is not null ? $"{dir} {dur}s" : $"{dir}";
-        }
-        if (name == "see") return "looking...";
-        return name;
+        if (!ActionDisplays.TryGetValue(name, out var display))
+            return new ActionData(name, DefaultActionIcon, name, input);
+        return new ActionData(name, display.Icon, display.Format(name, input), input);
     }
 }
