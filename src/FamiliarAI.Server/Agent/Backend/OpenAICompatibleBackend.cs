@@ -80,6 +80,7 @@ public sealed class OpenAICompatibleBackend : ILlmBackend, IDisposable
         }
 
         _logger.LogDebug("OpenAI-compat request: {Model} @ {Base}", _model, _http.BaseAddress);
+        BackendDumper.DumpRequest("openai", body);
 
         using var request = new HttpRequestMessage(HttpMethod.Post, "chat/completions");
         request.Content = new StringContent(body.ToJsonString(_jsonOptions), Encoding.UTF8, "application/json");
@@ -189,6 +190,7 @@ public sealed class OpenAICompatibleBackend : ILlmBackend, IDisposable
             rawAssistant["tool_calls"] = tcsArr;
         }
 
+        BackendDumper.DumpResponse("openai", rawAssistant);
         return (new TurnResult(stop, text, toolCalls), rawAssistant);
     }
 
@@ -205,6 +207,8 @@ public sealed class OpenAICompatibleBackend : ILlmBackend, IDisposable
             ["messages"] = new JsonArray { MakeUserMessage(prompt) },
         };
 
+        BackendDumper.DumpRequest("openai", body);
+
         using var request = new HttpRequestMessage(HttpMethod.Post, "chat/completions");
         request.Content = new StringContent(body.ToJsonString(_jsonOptions), Encoding.UTF8, "application/json");
 
@@ -212,6 +216,7 @@ public sealed class OpenAICompatibleBackend : ILlmBackend, IDisposable
         response.EnsureSuccessStatusCode();
 
         var json = await response.Content.ReadAsStringAsync(ct);
+        BackendDumper.DumpResponse("openai", JsonNode.Parse(json)!);
         var doc = JsonDocument.Parse(json);
         return doc.RootElement
             .GetProperty("choices")[0]

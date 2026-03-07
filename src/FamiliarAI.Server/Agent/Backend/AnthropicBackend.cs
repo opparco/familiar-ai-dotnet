@@ -85,6 +85,7 @@ public sealed class AnthropicBackend : ILlmBackend, IDisposable
 
         var bodyJson = body.ToJsonString(_jsonOptions);
         _logger.LogDebug("Anthropic request: {Body}", bodyJson);
+        BackendDumper.DumpRequest("anthropic", body);
 
         using var request = new HttpRequestMessage(HttpMethod.Post, "v1/messages");
         request.Content = new StringContent(bodyJson, Encoding.UTF8, "application/json");
@@ -211,6 +212,7 @@ public sealed class AnthropicBackend : ILlmBackend, IDisposable
             ["content"] = content,
         };
 
+        BackendDumper.DumpResponse("anthropic", rawAssistant);
         return (new TurnResult(stop, fullText, toolCalls), rawAssistant);
     }
 
@@ -227,6 +229,8 @@ public sealed class AnthropicBackend : ILlmBackend, IDisposable
             ["messages"] = new JsonArray { MakeUserMessage(prompt) },
         };
 
+        BackendDumper.DumpRequest("anthropic", body);
+
         using var request = new HttpRequestMessage(HttpMethod.Post, "v1/messages");
         request.Content = new StringContent(body.ToJsonString(_jsonOptions), Encoding.UTF8, "application/json");
 
@@ -234,6 +238,7 @@ public sealed class AnthropicBackend : ILlmBackend, IDisposable
         response.EnsureSuccessStatusCode();
 
         var json = await response.Content.ReadAsStringAsync(ct);
+        BackendDumper.DumpResponse("anthropic", JsonNode.Parse(json)!);
         var doc = JsonDocument.Parse(json);
         foreach (var block in doc.RootElement.GetProperty("content").EnumerateArray())
         {
