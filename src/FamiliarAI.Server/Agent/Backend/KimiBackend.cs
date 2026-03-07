@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
@@ -20,6 +21,11 @@ namespace FamiliarAI.Server.Agent.Backend;
 public sealed class KimiBackend : ILlmBackend, IDisposable
 {
     private const string BaseUrl = "https://api.moonshot.ai/v1/";
+
+    private static readonly JsonSerializerOptions _jsonOptions = new()
+    {
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+    };
 
     private readonly HttpClient _http;
     private readonly string _model;
@@ -83,10 +89,10 @@ public sealed class KimiBackend : ILlmBackend, IDisposable
             body["tools"] = toolsArr;
         }
 
-        _logger.LogDebug("Kimi request: {Messages}", body.ToJsonString());
+        _logger.LogDebug("Kimi request: {Messages}", body.ToJsonString(_jsonOptions));
 
         using var request = new HttpRequestMessage(HttpMethod.Post, "chat/completions");
-        request.Content = new StringContent(body.ToJsonString(), Encoding.UTF8, "application/json");
+        request.Content = new StringContent(body.ToJsonString(_jsonOptions), Encoding.UTF8, "application/json");
 
         using var response = await _http.SendAsync(
             request, HttpCompletionOption.ResponseHeadersRead, ct);
@@ -199,7 +205,7 @@ public sealed class KimiBackend : ILlmBackend, IDisposable
                     ["function"] = new JsonObject
                     {
                         ["name"] = tc.Name,
-                        ["arguments"] = tc.Input.ToJsonString(),
+                        ["arguments"] = tc.Input.ToJsonString(_jsonOptions),
                     },
                 });
             }
@@ -223,7 +229,7 @@ public sealed class KimiBackend : ILlmBackend, IDisposable
         };
 
         using var request = new HttpRequestMessage(HttpMethod.Post, "chat/completions");
-        request.Content = new StringContent(body.ToJsonString(), Encoding.UTF8, "application/json");
+        request.Content = new StringContent(body.ToJsonString(_jsonOptions), Encoding.UTF8, "application/json");
 
         using var response = await _http.SendAsync(request, ct);
         response.EnsureSuccessStatusCode();

@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
@@ -13,6 +14,11 @@ namespace FamiliarAI.Server.Agent.Backend;
 /// </summary>
 public sealed class OpenAICompatibleBackend : ILlmBackend, IDisposable
 {
+    private static readonly JsonSerializerOptions _jsonOptions = new()
+    {
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+    };
+
     private readonly HttpClient _http;
     private readonly string _model;
     private readonly ILogger<OpenAICompatibleBackend> _logger;
@@ -76,7 +82,7 @@ public sealed class OpenAICompatibleBackend : ILlmBackend, IDisposable
         _logger.LogDebug("OpenAI-compat request: {Model} @ {Base}", _model, _http.BaseAddress);
 
         using var request = new HttpRequestMessage(HttpMethod.Post, "chat/completions");
-        request.Content = new StringContent(body.ToJsonString(), Encoding.UTF8, "application/json");
+        request.Content = new StringContent(body.ToJsonString(_jsonOptions), Encoding.UTF8, "application/json");
 
         using var response = await _http.SendAsync(
             request, HttpCompletionOption.ResponseHeadersRead, ct);
@@ -176,7 +182,7 @@ public sealed class OpenAICompatibleBackend : ILlmBackend, IDisposable
                     ["function"] = new JsonObject
                     {
                         ["name"] = tc.Name,
-                        ["arguments"] = tc.Input.ToJsonString(),
+                        ["arguments"] = tc.Input.ToJsonString(_jsonOptions),
                     },
                 });
             }
@@ -200,7 +206,7 @@ public sealed class OpenAICompatibleBackend : ILlmBackend, IDisposable
         };
 
         using var request = new HttpRequestMessage(HttpMethod.Post, "chat/completions");
-        request.Content = new StringContent(body.ToJsonString(), Encoding.UTF8, "application/json");
+        request.Content = new StringContent(body.ToJsonString(_jsonOptions), Encoding.UTF8, "application/json");
 
         using var response = await _http.SendAsync(request, ct);
         response.EnsureSuccessStatusCode();

@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
@@ -17,6 +18,11 @@ namespace FamiliarAI.Server.Agent.Backend;
 public sealed class AnthropicBackend : ILlmBackend, IDisposable
 {
     private const string BaseUrl = "https://api.anthropic.com/";
+
+    private static readonly JsonSerializerOptions _jsonOptions = new()
+    {
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+    };
     private const string AnthropicVersion = "2023-06-01";
 
     private readonly HttpClient _http;
@@ -77,7 +83,7 @@ public sealed class AnthropicBackend : ILlmBackend, IDisposable
             body["tools"] = toolsArr;
         }
 
-        var bodyJson = body.ToJsonString();
+        var bodyJson = body.ToJsonString(_jsonOptions);
         _logger.LogDebug("Anthropic request: {Body}", bodyJson);
 
         using var request = new HttpRequestMessage(HttpMethod.Post, "v1/messages");
@@ -222,7 +228,7 @@ public sealed class AnthropicBackend : ILlmBackend, IDisposable
         };
 
         using var request = new HttpRequestMessage(HttpMethod.Post, "v1/messages");
-        request.Content = new StringContent(body.ToJsonString(), Encoding.UTF8, "application/json");
+        request.Content = new StringContent(body.ToJsonString(_jsonOptions), Encoding.UTF8, "application/json");
 
         using var response = await _http.SendAsync(request, ct);
         response.EnsureSuccessStatusCode();
