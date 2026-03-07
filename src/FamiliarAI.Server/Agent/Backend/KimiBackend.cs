@@ -90,6 +90,7 @@ public sealed class KimiBackend : ILlmBackend, IDisposable
         }
 
         _logger.LogDebug("Kimi request: {Messages}", body.ToJsonString(_jsonOptions));
+        BackendDumper.DumpRequest("kimi", body);
 
         using var request = new HttpRequestMessage(HttpMethod.Post, "chat/completions");
         request.Content = new StringContent(body.ToJsonString(_jsonOptions), Encoding.UTF8, "application/json");
@@ -212,6 +213,7 @@ public sealed class KimiBackend : ILlmBackend, IDisposable
             rawAssistant["tool_calls"] = tcsArr;
         }
 
+        BackendDumper.DumpResponse("kimi", rawAssistant);
         return (new TurnResult(stop, text, toolCalls), rawAssistant);
     }
 
@@ -228,6 +230,8 @@ public sealed class KimiBackend : ILlmBackend, IDisposable
             ["messages"] = new JsonArray { MakeUserMessage(prompt) },
         };
 
+        BackendDumper.DumpRequest("kimi", body);
+
         using var request = new HttpRequestMessage(HttpMethod.Post, "chat/completions");
         request.Content = new StringContent(body.ToJsonString(_jsonOptions), Encoding.UTF8, "application/json");
 
@@ -235,6 +239,7 @@ public sealed class KimiBackend : ILlmBackend, IDisposable
         response.EnsureSuccessStatusCode();
 
         var json = await response.Content.ReadAsStringAsync(ct);
+        BackendDumper.DumpResponse("kimi", JsonNode.Parse(json)!);
         var doc = JsonDocument.Parse(json);
         return doc.RootElement
             .GetProperty("choices")[0]
